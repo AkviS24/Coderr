@@ -1,0 +1,50 @@
+Python
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+Virtual Environment
+
+.venv/
+venv/
+env/
+ENV/
+
+Django
+
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+
+Environment / Secrets
+
+.env
+.env.*
+!.env.example
+
+VS Code
+
+.vscode/
+
+PyCharm
+
+.idea/
+
+OS
+
+.DS_Store
+Thumbs.db
+
+Python tooling
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/

@@ -29,3 +29,28 @@ class UserProfileViewTest(TestCase):
             response.status_code,
             status.HTTP_200_OK,
         )
+
+
+    def test_get_profile_not_found(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.get(
+            '/api/profile/9999/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+
+    def test_get_profile_not_authenticated(self):
+
+        response = self.client.get(
+            f'/api/profile/{self.profile.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )

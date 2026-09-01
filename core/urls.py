@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from offers_app.api.views import OfferDetailView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path(
@@ -26,5 +28,14 @@ urlpatterns = [
     path(
         'api/',
         include('auth_app.api.urls'),
+    ),
+    path(
+        'api/offers/',
+        include('offers_app.api.urls'),
+    ),
+    path(
+        'api/offerdetails/<int:pk>/',
+        OfferDetailView.as_view(),
+        name='offerdetail-detail',
     ),
 ]

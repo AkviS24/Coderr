@@ -1,3 +1,7 @@
+from datetime import timedelta
+
+from django.utils import timezone
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -395,4 +399,127 @@ class OffersTest(APITestCase):
         self.assertEqual(
             response.data[0]['id'],
             expensive_offer.id,
+        )
+
+    def test_get_offers_filters_by_max_delivery_time(self):
+        OfferDetail.objects.create(
+            offer=self.offer,
+            title='Basic',
+            revisions=2,
+            delivery_time_in_days=5,
+            price=100.00,
+            features=['Logo Design'],
+            offer_type='basic',
+        )
+
+        OfferDetail.objects.create(
+            offer=self.offer,
+            title='Standard',
+            revisions=5,
+            delivery_time_in_days=7,
+            price=200.00,
+            features=['Logo Design', 'Visitenkarte'],
+            offer_type='standard',
+        )
+
+        response = self.client.get(
+            '/api/offers/?max_delivery_time=5',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]['id'],
+            self.offer.id,
+        )
+
+    def test_get_offers_orders_by_updated_at(self):
+        older_offer = Offer.objects.create(
+            user=self.user,
+            title='Older Offer',
+            description='Older description',
+        )
+
+        newer_offer = Offer.objects.create(
+            user=self.user,
+            title='Newer Offer',
+            description='Newer description',
+        )
+
+        now = timezone.now()
+
+        older_offer.updated_at = now - timedelta(days=1)
+        older_offer.save(update_fields=['updated_at'])
+
+        newer_offer.updated_at = now
+        newer_offer.save(update_fields=['updated_at'])
+
+        response = self.client.get(
+            '/api/offers/?ordering=-updated_at',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data[0]['id'],
+            newer_offer.id,
+        )
+
+    def test_get_offers_orders_by_min_price(self):
+
+        cheap_offer = Offer.objects.create(
+            user=self.user,
+            title='Cheap Offer',
+            description='Cheap description',
+        )
+
+        expensive_offer = Offer.objects.create(
+            user=self.user,
+            title='Expensive Offer',
+            description='Expensive description',
+        )
+
+        OfferDetail.objects.create(
+            offer=cheap_offer,
+            title='Cheap Detail',
+            revisions=2,
+            delivery_time_in_days=5,
+            price=50.00,
+            features=['Feature 1'],
+            offer_type='basic',
+        )
+
+        OfferDetail.objects.create(
+            offer=expensive_offer,
+            title='Expansive Detail',
+            revisions=5,
+            delivery_time_in_days=7,
+            price=150.00,
+            features=['Feature 1'],
+            offer_type='basic',
+        )
+
+        response = self.client.get(
+            '/api/offers/?ordering=min_price',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data[0]['id'],
+            cheap_offer.id
         )

@@ -22,3 +22,8 @@ class RegistrationSerializer(serializers.Serializer):
             )
 
         return attrs
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()

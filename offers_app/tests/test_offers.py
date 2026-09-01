@@ -764,3 +764,203 @@ class OffersTest(APITestCase):
                 'id',
                 detail,
             )
+
+    def test_create_offer_returns_complete_details(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'title': 'Complete Detail Offer',
+            'description': 'Offer with complete details',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design', 'Vistienkarte'],
+                    'offer_type': 'standard',
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 10,
+                    'delivery_time_in_days': 10,
+                    'price': 500.00,
+                    'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        required_detail_fields = [
+            'id',
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type',
+        ]
+
+        for detail in response.data['details']:
+            for field in required_detail_fields:
+                self.assertIn(
+                    field,
+                    detail,
+                )
+
+    def test_create_offer_requires_three_details(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'title': 'Incomplete Offer',
+            'description': 'Offer with incomplete details.',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 7,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design', 'Visitenkarte'],
+                    'offer_type': 'standard',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_create_offer_requires_title(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'description': 'Offer without a title.',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design', 'Visitenkarte'],
+                    'offer_type': 'standard',
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 10,
+                    'delivery_time_in_days': 10,
+                    'price': 500.00,
+                    'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_create_offer_accept_image_as_null(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'title': 'Offer with no Image',
+            'description': 'Offer description',
+            'image': None,
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design', 'Visitenkarte'],
+                    'offer_type': 'standard',
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 10,
+                    'delivery_time_in_days': 10,
+                    'price': 500.00,
+                    'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        offer = Offer.objects.get(title='Offer with no Image')
+        self.assertFalse(offer.image.name)

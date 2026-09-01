@@ -21,6 +21,53 @@ class OfferDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class OfferDetailUpdateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField()
+
+    class Meta:
+        model = OfferDetail
+        fields = [
+            'id',
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type',
+        ]
+        extra_kwargs = {
+            'title': {'required': False},
+            'revisions': {'required': False},
+            'delivery_time_in_days': {'required': False},
+            'price': {'required': False},
+            'features': {'required': False},
+            'offer_type': {'required': False},
+        }
+
+
+
+class OfferUpdateSerializer(serializers.ModelSerializer):
+    details = OfferDetailUpdateSerializer(
+        source='offerdetail_set',
+        many=True,
+        required=False,
+    )
+
+    class Meta:
+        model = Offer
+        fields = [
+            'title',
+            'image',
+            'description',
+            'details',
+        ]
+        extra_kwargs = {
+            'title': {'required': False},
+            'image': {'required': False},
+            'description': {'required': False},
+        }
+
+
 
 class OfferDetailReferenceSerializer(serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(
@@ -80,4 +127,34 @@ class OfferSerializer(serializers.ModelSerializer):
             'min_price',
             'min_delivery_time',
             'user_details',
+        ]
+
+
+
+class OfferCreateResponseSerializer(serializers.ModelSerializer):
+    details = OfferDetailSerializer(
+        source='offerdetail_set',
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = Offer
+        fields = [
+            'id',
+            'title',
+            'image',
+            'description',
+            'details',
+        ]
+
+
+
+class OfferCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Offer
+        fields = [
+            'title',
+            'description',
         ]

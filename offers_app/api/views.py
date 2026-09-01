@@ -7,7 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import OfferSerializer, OfferDetailSerializer
+from .serializers import (
+    OfferCreateResponseSerializer,
+    OfferSerializer,
+    OfferCreateSerializer,
+)
 from ..models import Offer, OfferDetail
 
 
@@ -98,6 +102,23 @@ class OffersView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        if len(request.data.get('details', [])) != 3:
+            return Response(
+                {'detail': 'Exactly three offer details are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = OfferCreateSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         offer = Offer.objects.create(
             user=request.user,
             title=request.data.get('title'),
@@ -116,7 +137,7 @@ class OffersView(APIView):
             )
 
         return Response(
-            OfferSerializer(
+            OfferCreateResponseSerializer(
                 offer,
                 context={'request': request},
             ).data,

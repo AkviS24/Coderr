@@ -85,6 +85,44 @@ class OffersView(APIView):
             serializer.data,
         )
 
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'Authentication credentials were not provided.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if request.user.type != 'business':
+            return Response(
+                {'detail': 'Only business User can create offers.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        offer = Offer.objects.create(
+            user=request.user,
+            title=request.data.get('title'),
+            description=request.data.get('description'),
+        )
+
+        for detail_data in request.data.get('details', []):
+            OfferDetail.objects.create(
+                offer=offer,
+                title=detail_data.get('title'),
+                revisions=detail_data.get('revisions'),
+                delivery_time_in_days=detail_data.get('delivery_time_in_days'),
+                price=detail_data.get('price'),
+                features=detail_data.get('features'),
+                offer_type=detail_data.get('offer_type'),
+            )
+
+        return Response(
+            OfferSerializer(
+                offer,
+                context={'request': request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class OfferDetailView(APIView):
     permission_classes = [IsAuthenticated]

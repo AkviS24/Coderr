@@ -659,3 +659,108 @@ class OffersTest(APITestCase):
             len(response.data['results']),
             2,
         )
+
+    def test_create_offer_requires_authentication(self):
+        response = self.client.post(
+            '/api/offers/',
+            {
+                'title': 'New Offer',
+                'description': 'New offer description',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_create_offer_requires_business_user(self):
+        customer_user = CustomUser.objects.create_user(
+            username='customeruser',
+            password='customerofferpassword123!',
+            email='customeroffer@tester.de',
+            type='customer',
+        )
+
+        self.client.force_authenticate(
+            user=customer_user,
+        )
+
+        response = self.client.post(
+
+            '/api/offers/',
+            {
+                'title': 'New Offer',
+                'description': 'New offer description.',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_create_offer_succesfully(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'title': 'New Offer',
+            'description': 'New Offer description.',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design', 'Visitenkarte'],
+                    'offer_type': 'standard', 
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 10,
+                    'delivery_time_in_days': 10,
+                    'price': 500.00,
+                    'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            response.data['title'],
+            'New Offer',
+        )
+
+        self.assertEqual(
+            len(response.data['details']),
+            3,
+        )
+
+        for detail in response.data['details']:
+            self.assertIn(
+                'id',
+                detail,
+            )

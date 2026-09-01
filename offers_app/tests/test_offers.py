@@ -55,7 +55,7 @@ class OffersTest(APITestCase):
             status.HTTP_200_OK,
         )
         self.assertEqual(
-            response.data[0]['title'],
+            response.data['results'][0]['title'],
             'Test Offer',
         )
 
@@ -66,7 +66,7 @@ class OffersTest(APITestCase):
         for field in self.required_fields:
             self.assertIn(
                 field,
-                response.data[0],
+                response.data['results'][0],
             )
 
     def test_get_offers_returns_details(self):
@@ -92,7 +92,7 @@ class OffersTest(APITestCase):
             status.HTTP_200_OK,
         )
 
-        details = response.data[0]['details']
+        details = response.data['results'][0]['details']
 
         self.assertEqual(
             len(details),
@@ -121,21 +121,21 @@ class OffersTest(APITestCase):
 
         self.assertIn(
             'user_details',
-            response.data[0],
+            response.data['results'][0],
         )
 
         self.assertEqual(
-            response.data[0]['user_details']['first_name'],
+            response.data['results'][0]['user_details']['first_name'],
             '',
         )
 
         self.assertEqual(
-            response.data[0]['user_details']['last_name'],
+            response.data['results'][0]['user_details']['last_name'],
             '',
         )
 
         self.assertEqual(
-            response.data[0]['user_details']['username'],
+            response.data['results'][0]['user_details']['username'],
             'offeruser',
         )
 
@@ -179,11 +179,11 @@ class OffersTest(APITestCase):
             status.HTTP_200_OK,
         )
         self.assertEqual(
-            response.data[0]['min_price'],
+            response.data['results'][0]['min_price'],
             100,
         )
         self.assertEqual(
-            response.data[0]['min_delivery_time'],
+            response.data['results'][0]['min_delivery_time'],
             5,
         )
 
@@ -314,12 +314,12 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             newer_offer.id,
         )
 
         self.assertEqual(
-            response.data[1]['id'],
+            response.data['results'][1]['id'],
             older_offer.id,
         )
 
@@ -347,12 +347,12 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data['results']),
             1,
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             self.offer.id,
         )
 
@@ -393,11 +393,11 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data['results']),
             1,
         )
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             expensive_offer.id,
         )
 
@@ -432,12 +432,12 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data['results']),
             1,
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             self.offer.id,
         )
 
@@ -472,7 +472,7 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             newer_offer.id,
         )
 
@@ -520,8 +520,13 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             cheap_offer.id
+        )
+
+        self.assertEqual(
+            response.data['results'][1]['id'],
+            expensive_offer.id,
         )
 
     def test_get_offers_searches_by_title(self):
@@ -547,12 +552,12 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data['results']),
             1,
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             matching_offer.id,
         )
 
@@ -579,11 +584,41 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data),
+            len(response.data['results']),
             1,
         )
 
         self.assertEqual(
-            response.data[0]['id'],
+            response.data['results'][0]['id'],
             matching_offer.id,
+        )
+
+    def test_get_offers_returns_paginated_response(self):
+        response = self.client.get(
+            '/api/offers/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertIn(
+            'count',
+            response.data,
+        )
+
+        self.assertIn(
+            'next',
+            response.data,
+        )
+
+        self.assertIn(
+            'previous',
+            response.data,
+        )
+
+        self.assertIn(
+            'results',
+            response.data,
         )

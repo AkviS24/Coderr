@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import F, Min, Q
 
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -63,15 +64,25 @@ class OffersView(APIView):
                 | Q(description__icontains=search),
             ).distinct()
 
-        serializer = OfferSerializer(
+        paginator = PageNumberPagination()
+        paginator.page_size = request.query_params.get(
+            'page_size',
+            10,
+        )
+
+        page = paginator.paginate_queryset(
             offers,
+            request,
+        )
+
+        serializer = OfferSerializer(
+            page,
             many=True,
             context={'request': request},
         )
 
-        return Response(
+        return paginator.get_paginated_response(
             serializer.data,
-            status=status.HTTP_200_OK,
         )
 
 

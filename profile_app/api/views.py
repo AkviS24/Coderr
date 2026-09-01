@@ -23,23 +23,32 @@ class UserProfileView(APIView):
         )
 
 
-class BusinessProfileView(APIView):
+class ProfileListView(APIView):
     permission_classes = [IsAuthenticated]
+
+    profile_type = None
+
+    def get_profiles(self):
+        return UserProfile.objects.filter(
+            user__type=self.profile_type,
+        )
+
+    def server_error_response(self):
+        return Response(
+            {
+                'detail': (
+                    'Internal Server error while processing the request.'
+                )
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     def get(self, request):
         try:
-            profiles = UserProfile.objects.filter(
-                user__type='business',
-            )
+            profiles = self.get_profiles()
         except Exception:
-            return Response(
-                {
-                    'detail': (
-                        'Internal Server error while processing the request.'
-                    )
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return self.server_error_response()
+        
         serializer = ProfileListSerializer(
             profiles,
             many=True,
@@ -48,3 +57,10 @@ class BusinessProfileView(APIView):
             serializer.data,
             status=status.HTTP_200_OK,
         )
+
+class BusinessProfilesView(ProfileListView):
+    profile_type = 'business'
+
+
+class CustomerProfilesView(ProfileListView):
+    profile_type = 'customer'

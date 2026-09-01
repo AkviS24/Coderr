@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import UserProfileView, BusinessProfileView
+from .views import UserProfileView, BusinessProfilesView, CustomerProfilesView
 
 
 urlpatterns = [
@@ -10,6 +10,10 @@ urlpatterns = [
     ),
     path(
         'profiles/business/',
-        BusinessProfileView.as_view(),
+        BusinessProfilesView.as_view(),
     ),
+    path(
+        'profiles/customer/',
+        CustomerProfilesView.as_view(),
+    )
 ]

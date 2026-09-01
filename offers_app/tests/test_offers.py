@@ -622,3 +622,40 @@ class OffersTest(APITestCase):
             'results',
             response.data,
         )
+
+    def test_get_offers_respects_page_size(self):
+        Offer.objects.create(
+            user=self.user,
+            title='Second Offer',
+            description='Second description',
+        )
+
+        Offer.objects.create(
+            user=self.user,
+            title='Third Offer',
+            description='Third description',
+        )
+
+        Offer.objects.create(
+            user=self.user,
+            title='Fourth Offer',
+            description='Fourth description',
+        )
+
+        response = self.client.get(
+            '/api/offers/?page_size=2',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['count'],
+            4,
+        )
+        self.assertEqual(
+            len(response.data['results']),
+            2,
+        )

@@ -7,4 +7,8 @@ urlpatterns = [
         '',
         views.OffersView.as_view(),
     ),
+    path(
+        '<int:pk>/',
+        views.OfferDetailView.as_view(),
+    ),
 ]

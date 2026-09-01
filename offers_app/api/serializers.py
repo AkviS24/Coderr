@@ -1,3 +1,5 @@
+from django.db import models
+
 from rest_framework import serializers
 
 from ..models import Offer, OfferDetail
@@ -41,6 +43,29 @@ class OfferSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    min_price = serializers.SerializerMethodField()
+    min_delivery_time = serializers.SerializerMethodField()
+    user_details = serializers.SerializerMethodField()
+
+    def get_min_price(self, obj):
+        min_price = obj.offerdetail_set.aggregate(
+            min_price=models.Min('price'),
+        )['min_price']
+
+        return min_price
+
+    def get_min_delivery_time(self, obj):
+        return obj.offerdetail_set.aggregate(
+            min_delivery_time=models.Min('delivery_time_in_days'),
+        )['min_delivery_time']
+
+    def get_user_details(self, obj):
+        return {
+            'first_name': obj.user.first_name,
+            'last_name': obj.user.last_name,
+            'username': obj.user.username,
+        }
+
     class Meta:
         model = Offer
         fields = [
@@ -52,4 +77,7 @@ class OfferSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'details',
+            'min_price',
+            'min_delivery_time',
+            'user_details',
         ]

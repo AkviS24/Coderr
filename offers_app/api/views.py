@@ -12,8 +12,17 @@ from ..models import Offer, OfferDetail
 
 
 class OffersView(APIView):
+
     def get(self, request):
-        offers = Offer.objects.all()
+        offers = Offer.objects.all().order_by('-created_at')
+
+        creator_id = request.query_params.get('creator_id')
+        if creator_id:
+            offers = offers.filter(user_id=creator_id)
+
+        min_price = request.query_params.get('min_price')
+        if min_price:
+            offers = offers.filter(offerdetail__price__gte=min_price)
 
         serializer = OfferSerializer(
             offers,
@@ -31,12 +40,15 @@ class OfferDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        detail = get_object_or_404(
-            OfferDetail,
+        offer = get_object_or_404(
+            Offer,
             pk=pk,
         )
 
-        serializer = OfferDetailSerializer(detail)
+        serializer = OfferSerializer(
+            offer,
+            context={'request': request},
+        )
 
         return Response(
             serializer.data,

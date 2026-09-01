@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404
-from django.db.models import F, Min
+from django.db.models import F, Min, Q
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -54,6 +54,14 @@ class OffersView(APIView):
             offers = offers.filter(
                 offerdetail__price__gte=min_price,
             )
+
+        search = request.query_params.get('search')
+
+        if search:
+            offers = offers.filter(
+                Q(title__icontains=search)
+                | Q(description__icontains=search),
+            ).distinct()
 
         serializer = OfferSerializer(
             offers,

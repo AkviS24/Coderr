@@ -523,3 +523,67 @@ class OffersTest(APITestCase):
             response.data[0]['id'],
             cheap_offer.id
         )
+
+    def test_get_offers_searches_by_title(self):
+        matching_offer = Offer.objects.create(
+            user=self.user,
+            title='Logo Design',
+            description='Professional business package',
+        )
+
+        Offer.objects.create(
+            user=self.user,
+            title='Website Development',
+            description='Frontend and backend development',
+        )
+
+        response = self.client.get(
+            '/api/offers/?search=Logo',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]['id'],
+            matching_offer.id,
+        )
+
+    def test_get_offers_searches_by_description(self):
+        matching_offer = Offer.objects.create(
+            user=self.user,
+            title='Website Development',
+            description='Professional Logo Design package',
+        )
+
+        Offer.objects.create(
+            user=self.user,
+            title='Mobile App Development',
+            description='Professional website package',
+        )
+
+        response = self.client.get(
+            '/api/offers/?search=Logo',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]['id'],
+            matching_offer.id,
+        )

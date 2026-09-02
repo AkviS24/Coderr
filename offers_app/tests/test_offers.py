@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 
 from auth_app.models import CustomUser
 from offers_app.models import Offer, OfferDetail
+from offers_app.api.serializers import OfferUpdateSerializer
 
 
 class OffersTest(APITestCase):
@@ -964,3 +965,322 @@ class OffersTest(APITestCase):
 
         offer = Offer.objects.get(title='Offer with no Image')
         self.assertFalse(offer.image.name)
+
+
+    def test_update_offer_serializer_updates_exsisting_details(self):
+        basic =OfferDetail.objects.create(
+            offer=self.offer,
+            title='Basic',
+            revisions=2,
+            delivery_time_in_days=5,
+            price=100.00,
+            features=['Logo Design'],
+            offer_type='basic',
+        )
+
+        standard = OfferDetail.objects.create(
+            offer=self.offer,
+            title='Standard',
+            revisions=5,
+            delivery_time_in_days=7,
+            price=200.00,
+            features=['Logo Design', 'Visitenkarte'],
+            offer_type='standard',
+        )
+
+        premium = OfferDetail.objects.create(
+            offer=self.offer,
+            title='Premium',
+            revisions=10,
+            delivery_time_in_days=10,
+            price=500.00,
+            features=['Logo Design', 'Visitenkarte', 'Flyer'],
+            offer_type='premium',
+        )
+
+        basic_id = basic.id
+        standard_id = standard.id
+        premium_id = premium.id
+
+        data = {
+            'title': 'Updated Offer',
+            'details': [
+                {
+                    'id': basic.id,
+                    'title': 'Updated Basic',
+                    'price': 150.00,
+                    'offer_type': 'basic',
+                },
+            ],
+        }
+
+        serializer = OfferUpdateSerializer(
+            self.offer,
+            data=data,
+            partial=True,
+        )
+
+        self.assertTrue(serializer.is_valid())
+        serializer.save()
+
+        self.offer.refresh_from_db()
+        basic.refresh_from_db()
+        standard.refresh_from_db()
+        premium.refresh_from_db()
+
+        self.assertEqual(
+            self.offer.title,
+            'Updated Offer',
+        )
+
+        self.assertEqual(
+            self.offer.description,
+            'Test description',
+        )
+
+        self.assertEqual(
+            basic.id,
+            basic_id,
+        )
+
+        self.assertEqual(
+            basic.title,
+            'Updated Basic',
+        )
+
+        self.assertEqual(
+            basic.price,
+            150.00,
+        )
+
+        self.assertEqual(
+            standard.id,
+            standard_id,
+        )
+
+        self.assertEqual(
+            standard.title,
+            'Standard',
+        )
+
+        self.assertEqual(
+            standard.price,
+            200.00,
+        )
+
+        self.assertEqual(
+            premium.id,
+            premium_id,
+        )
+
+        self.assertEqual(
+            premium.title,
+            'Premium',
+        )
+
+        self.assertEqual(
+            premium.price,
+            500.00,
+        )
+
+    def test_patch_offer_requires_authentication(self):
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'title': 'Updated Offer',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_patch_offer_requires_offer_owner(self):
+        other_user = CustomUser.objects.create_user(
+            username='otherofferuser',
+            password='otherpassword123!',
+            email='otheruser@tester.de',
+            type='business',
+        )
+
+        self.client.force_authenticate(
+            user=other_user,
+        )
+
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'title': 'Updated Offer',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_patch_offer_not_found_returns_404(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.patch(
+            '/api/offers/9999/',
+            {
+                'title': 'Updated Offer',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_patch_offer_updates_title(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'title': 'Updated Offer',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.offer.refresh_from_db()
+
+        self.assertEqual(
+            self.offer.title,
+            'Updated Offer',
+        )
+
+        self.assertEqual(
+            self.offer.description,
+            'Test description',
+        )
+
+    def test_patch_offer_returns_full_updated_offer(self):
+
+        details = [
+            {
+                'title': 'Basic',
+                'revisions': 2,
+                'delivery_time_in_days': 5,
+                'price': 100.00,
+                'features': ['Logo Design'],
+                'offer_type': 'basic',
+            },
+            {
+                'title': 'Standard',
+                'revisions': 5,
+                'delivery_time_in_days': 7,
+                'price': 200.00,
+                'features': ['Logo Sesign', 'Visitenkarte'],
+                'offer_type': 'standard',
+            },
+            {
+                'title': 'Premium',
+                'revisions': 10,
+                'delivery_time_in_days': 10,
+                'price': 500.00,
+                'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                'offer_type': 'premium',
+            },
+        ]
+
+        created_details = [
+            OfferDetail.objects.create(
+                offer=self.offer,
+                **detail,
+            )
+            for detail in details
+        ]
+
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'title': 'Updated Offer',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['id'],
+            self.offer.id,
+        )
+
+        self.assertEqual(
+            response.data['title'],
+            'Updated Offer',
+        )
+
+        self.assertEqual(
+            len(response.data['details']),
+            3,
+        )
+
+        returned_ids = {
+            detail['id']
+            for detail in response.data['details']
+        }
+
+        expected_ids = {
+            detail.id
+            for detail in created_details
+        }
+
+        self.assertEqual(
+            returned_ids,
+            expected_ids,
+        )
+
+        for detail in response.data['details']:
+            self.assertIn(
+                'title',
+                detail,
+            )
+
+            self.assertIn(
+                'revisions',
+                detail,
+            )
+
+            self.assertIn(
+                'delivery_time_in_days',
+                detail,
+            )
+
+            self.assertIn(
+                'price',
+                detail,
+            )
+
+            self.assertIn(
+                'features',
+                detail,
+            )
+
+            self.assertIn(
+                'offer_type',
+                detail,
+            )

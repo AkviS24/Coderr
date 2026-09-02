@@ -11,6 +11,7 @@ from .serializers import (
     OfferCreateResponseSerializer,
     OfferSerializer,
     OfferCreateSerializer,
+    OfferUpdateSerializer,
 )
 from ..models import Offer, OfferDetail
 
@@ -161,5 +162,36 @@ class OfferDetailView(APIView):
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, pk):
+        offer = get_object_or_404(
+            Offer,
+            pk=pk,
+        )
+        if offer.user != request.user:
+            return Response(
+                {'detail': 'You are not the owner of this Offer.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = OfferUpdateSerializer(
+            offer,
+            data=request.data,
+            partial=True,
+            context={'request': request},
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        response_serializer = OfferCreateResponseSerializer(
+            offer,
+            context = {'request': request},
+        )
+
+        return Response(
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )

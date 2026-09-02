@@ -41,7 +41,7 @@ class OfferDetailUpdateSerializer(serializers.ModelSerializer):
             'delivery_time_in_days': {'required': False},
             'price': {'required': False},
             'features': {'required': False},
-            'offer_type': {'required': False},
+            'offer_type': {'required': True},
         }
 
 
@@ -52,6 +52,24 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False,
     )
+
+    def update(self, instance, validated_data):
+        details_data = validated_data.pop('offerdetail_set', [])
+
+        instance = super().update(instance, validated_data)
+
+        for detail_data in details_data:
+            detail_id = detail_data.pop('id')
+            detail = instance.offerdetail_set.get(
+                id=detail_id,
+            )
+
+            for field, value in detail_data.items():
+                setattr(detail, field, value)
+
+            detail.save()
+
+        return instance
 
     class Meta:
         model = Offer

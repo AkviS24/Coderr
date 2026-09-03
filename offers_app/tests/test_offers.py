@@ -405,21 +405,27 @@ class OffersTest(APITestCase):
     def test_get_offers_filters_by_max_delivery_time(self):
         OfferDetail.objects.create(
             offer=self.offer,
-            title='Basic',
-            revisions=2,
-            delivery_time_in_days=5,
-            price=100.00,
-            features=['Logo Design'],
-            offer_type='basic',
-        )
-
-        OfferDetail.objects.create(
-            offer=self.offer,
             title='Standard',
             revisions=5,
             delivery_time_in_days=7,
             price=200.00,
             features=['Logo Design', 'Visitenkarte'],
+            offer_type='standard',
+        )
+
+        expected_offer_after_filtering = Offer.objects.create(
+            user=self.user,
+            title='Expected Offer',
+            description='Expected description',
+        )
+
+        OfferDetail.objects.create(
+            offer=expected_offer_after_filtering,
+            title='Expected Detail',
+            revisions=3,
+            delivery_time_in_days=3,
+            price=150.00,
+            features=['Logo Design'],
             offer_type='standard',
         )
 
@@ -433,13 +439,13 @@ class OffersTest(APITestCase):
         )
 
         self.assertEqual(
-            len(response.data['results']),
-            1,
+            response.data['results'][0]['id'],
+            expected_offer_after_filtering.id,
         )
 
-        self.assertEqual(
-            response.data['results'][0]['id'],
+        self.assertNotIn(
             self.offer.id,
+            [offer['id'] for offer in response.data['results']],
         )
 
     def test_get_offers_orders_by_updated_at(self):
@@ -1284,3 +1290,76 @@ class OffersTest(APITestCase):
                 'offer_type',
                 detail,
             )
+
+    def test_delete_offer_as_owner(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.delete(
+            f'/api/offers/{self.offer.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            Offer.objects.filter(id=self.offer.id).exists(),
+        )
+
+    def test_delete_offer_as_non_owner(self):
+        other_user = CustomUser.objects.create_user(
+            username='Other User',
+            password='otherpassword123!',
+            email='otheruser@tester.de',
+            type='business',
+        )
+
+        self.client.force_authenticate(
+            user=other_user,
+        )
+
+        response = self.client.delete(
+            f'/api/offers/{self.offer.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+        self.assertTrue(
+            Offer.objects.filter(id=self.offer.id).exists(),
+        )
+
+    def test_delete_offer_requires_authentication(self):
+        response = self.client.delete(
+            f'/api/offers/{self.offer.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+        self.assertTrue(
+            Offer.objects.filter(id=self.offer.id).exists(),
+        )
+
+    def test_delete_offer_returns_404_not_found(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        fake_offer_id = 9999
+
+        response = self.client.delete(
+            f'/api/offers/{fake_offer_id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )

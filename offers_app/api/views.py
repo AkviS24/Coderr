@@ -54,6 +54,13 @@ class OffersView(APIView):
                 user_id=creator_id,
             )
 
+        max_delivery_time = request.query_params.get('max_delivery_time')
+
+        if max_delivery_time:
+            offers = offers.filter(
+                offerdetail__delivery_time_in_days__lte=max_delivery_time,
+            )
+
         min_price = request.query_params.get('min_price')
 
         if min_price:
@@ -89,6 +96,7 @@ class OffersView(APIView):
         return paginator.get_paginated_response(
             serializer.data,
         )
+
 
     def post(self, request):
         if not request.user.is_authenticated:
@@ -194,4 +202,21 @@ class OfferDetailView(APIView):
         return Response(
             response_serializer.data,
             status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, pk):
+        offer = get_object_or_404(
+            Offer,
+            pk=pk,
+        )
+
+        if offer.user != request.user:
+            return Response(
+                {'detail': 'You are not the owner of this offer.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        offer.delete()
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )

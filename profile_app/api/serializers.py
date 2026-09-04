@@ -11,6 +11,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
     type = serializers.CharField(source='user.type')
     email = serializers.EmailField(source='user.email')
 
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        for field, value in user_data.items():
+            setattr(instance.user, field, value)
+
+        instance.user.save()
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.save()
+
+        return instance
+
     class Meta:
         model = UserProfile
         fields = [

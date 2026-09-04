@@ -92,10 +92,30 @@ class BusinessProfilesTest(APITestCase):
         )
         profile = response.data[0]
 
-        self.assertEqual(profile['location'], '')
-        self.assertEqual(profile['tel'], '')
-        self.assertEqual(profile['description'], '')
-        self.assertEqual(profile['working_hours'], '')
+        self.assertEqual(
+            profile['first_name'],
+            '',
+        )
+        self.assertEqual(
+            profile['last_name'],
+            '',
+        )
+        self.assertEqual(
+            profile['location'],
+            '',
+        )
+        self.assertEqual(
+            profile['tel'],
+            '',
+        )
+        self.assertEqual(
+            profile['description'],
+            '',
+        )
+        self.assertEqual(
+            profile['working_hours'],
+            '',
+        )
 
     def test_get_business_profiles_returns_required_fields(self):
         token = Token.objects.create(
@@ -117,4 +137,28 @@ class BusinessProfilesTest(APITestCase):
         self.assertNotIn(
             'created_at',
             profile,
+        )
+
+    def test_get_business_profiles_only_returns_business_profiles(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.get(
+            '/api/profiles/business/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]['type'],
+            'business',
         )

@@ -13,9 +13,36 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        profile = get_object_or_404(UserProfile, pk=pk)
+        profile = get_object_or_404(
+            UserProfile,
+            pk=pk
+        )
 
         serializer = UserProfileSerializer(profile)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request, pk):
+        profile = get_object_or_404(
+            UserProfile,
+            pk=pk,
+        )
+        if profile.user != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = UserProfileSerializer(
+            profile,
+            data=request.data,
+            partial=True,
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(
             serializer.data,

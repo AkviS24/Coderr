@@ -117,6 +117,16 @@ class CustomerProfilesTest(APITestCase):
         profile = response.data[0]
 
         self.assertEqual(
+            profile['first_name'],
+            '',
+        )
+
+        self.assertEqual(
+            profile['last_name'],
+            '',
+        )
+
+        self.assertEqual(
             profile['location'],
             '',
         )
@@ -131,4 +141,28 @@ class CustomerProfilesTest(APITestCase):
         self.assertEqual(
             profile['working_hours'],
             '',
+        )
+
+    def test_get_customer_profiles_returns_only_customer_profiles(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.get(
+            '/api/profiles/customer/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            len(response.data),
+            1,
+        )
+
+        self.assertEqual(
+            response.data[0]['type'],
+            'customer',
         )

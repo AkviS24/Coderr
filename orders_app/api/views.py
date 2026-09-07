@@ -75,3 +75,23 @@ class OrderDetailView(APIView):
             serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    def delete(self, request, pk):
+        order = get_object_or_404(
+            Order,
+            pk=pk,
+        )
+
+        if not request.user.is_staff:
+            return Response(
+                {
+                    'details': 'Only staff users can delete orders',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        order.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
+        )

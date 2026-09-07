@@ -20,6 +20,13 @@ class OrderViewTest(APITestCase):
             type='business',
         )
 
+        self.staff = CustomUser.objects.create_user(
+            username='staffuser',
+            password='staffpassword123!',
+            type='business',
+            is_staff=True,
+        )
+
         self.other_customer = CustomUser.objects.create_user(
             username='other customer',
             password='otherpasssword123!',
@@ -366,6 +373,78 @@ class OrderViewTest(APITestCase):
                 'status': 'completed',
             },
             format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_delete_order_as_a_staff_return_204(self):
+        self.client.force_authenticate(
+            user=self.staff,
+        )
+
+        response = self.client.delete(
+            f'/api/orders/{self.order.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            Order.objects.filter(
+                id=self.order.id,
+            ).exists(),
+        )
+
+    def test_delete_order_as_a_customer_returns_403(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.delete(
+            f'/api/orders/{self.order.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_delete_order_not_authenticated_returns_401(self):
+        response = self.client.delete(
+            f'/api/orders/{self.order.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_delete_order_with_unknown_id_returns_404(self):
+        self.client.force_authenticate(
+            user=self.staff,
+        )
+
+        response = self.client.delete(
+            f'/api/orders/9999/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_delete_order_requires_is_staff_true_or_returns_403(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.delete(
+            f'/api/orders/{self.order.id}/',
         )
 
         self.assertEqual(

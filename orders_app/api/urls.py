@@ -12,5 +12,5 @@ urlpatterns = [
         '<int:pk>/',
         OrderDetailView.as_view(),
         name='order-detail',
-    )
+    ),
 ]

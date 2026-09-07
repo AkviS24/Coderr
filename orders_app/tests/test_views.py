@@ -451,3 +451,188 @@ class OrderViewTest(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_order_count_returns_in_progress_orders(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            f'/api/order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['order_count'],
+            2,
+        )
+
+    def test_order_count_requires_authentication(self):
+        response = self.client.get(
+            f'/api/order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_order_count_unknown_business_id_returns_404(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            '/api/order-count/9999/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_order_count_only_counts_in_progress_orders(self):
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Completed Order',
+            revisions=2,
+            delivery_time_in_days=2,
+            price=50.00,
+            features=['Test'],
+            offer_type='basic',
+            status='completed',
+        )
+
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            f'/api/order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['order_count'],
+            2,
+        )
+
+    def test_order_count_from_business_user_without_orders_returns_0(self):
+        business_user_without_orders = CustomUser.objects.create_user(
+            username='business_without_orders',
+            password='businesspassword123!',
+            type='business'
+        )
+
+        self.client.force_authenticate(
+            user=business_user_without_orders,
+        )
+
+        response = self.client.get(
+            f'/api/order-count/{business_user_without_orders.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['order_count'],
+            0,
+        )
+
+    def test_completed_order_count_returns_completed_orders_(self):
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Completed Order',
+            revisions=2,
+            delivery_time_in_days=5,
+            price=150.00,
+            features=['Test'],
+            offer_type='basic',
+            status='completed',
+        )
+
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            f'/api/completed-order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['completed_order_count'],
+            1,
+        )
+
+    def test_completed_order_count_requires_authentication(self):
+        response = self.client.get(
+            f'/api/completed-order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_completed_order_count_returns_404_if_not_found(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            '/api/completed-order-count/99999/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_completed_order_count_only_counts_completed_orders(self):
+        Order.objects.create(
+            customer_user=self.customer,
+            business_user=self.business,
+            title='Completed Order',
+            revisions=3,
+            delivery_time_in_days=7,
+            price=500.00,
+            features=['Logo Design', 'Visitenkarte', 'Professional personal website'],
+            offer_type='premium',
+            status='completed',
+        )
+
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.get(
+            f'/api/completed-order-count/{self.business.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data['completed_order_count'],
+            1,
+        )

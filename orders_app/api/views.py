@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from auth_app.models import CustomUser
+
 from ..models import Order
 from .serializers import OrderSerializer, OrderStatusSerializer
 
@@ -18,7 +20,6 @@ class OrderListCreateView(APIView):
             Q(customer_user=request.user)
             | Q(business_user=request.user)
         )
-
         serializer = OrderSerializer(
             orders,
             many=True,
@@ -47,7 +48,6 @@ class OrderListCreateView(APIView):
         )
 
 
-
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -56,7 +56,6 @@ class OrderDetailView(APIView):
             Order,
             pk=pk,
         )
-
         if order.business_user != request.user:
             return Response(
                 {
@@ -81,7 +80,6 @@ class OrderDetailView(APIView):
             Order,
             pk=pk,
         )
-
         if not request.user.is_staff:
             return Response(
                 {
@@ -89,9 +87,50 @@ class OrderDetailView(APIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-
         order.delete()
 
         return Response(
             status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+class OrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        get_object_or_404(
+            CustomUser,
+            pk=business_user_id,
+        )
+        order_count = Order.objects.filter(
+            business_user_id=business_user_id,
+            status='in_progress',
+        ).count()
+
+        return Response(
+            {
+                'order_count': order_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class CompletedOrderCountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, business_user_id):
+        get_object_or_404(
+            CustomUser,
+            pk=business_user_id,
+        )
+        completed_order_count = Order.objects.filter(
+            business_user_id=business_user_id,
+            status='completed',
+        ).count()
+
+        return Response(
+            {
+                'completed_order_count': completed_order_count,
+            },
+            status=status.HTTP_200_OK,
         )

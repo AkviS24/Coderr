@@ -151,3 +151,101 @@ class ReviewListViewTest(APITestCase):
             response.data[-1]['id'],
             self.second_review.id,
         )
+
+    def test_get_reviews_allowed_for_business_user(self):
+        self.client.force_authenticate(
+            user=self.business_user,
+        )
+
+        response = self.client.get(
+            '/api/reviews/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+    def test_post_review_creates_review(self):
+        new_business_user = CustomUser.objects.create_user(
+            username='newbusiness',
+            password='newbusinesspassword123!',
+            type='business',
+        )
+
+        response = self.client.post(
+            '/api/reviews/',
+            {
+                'business_user': new_business_user.id,
+                'rating': 4,
+                'description': 'It was amazing',
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            Review.objects.count(),
+            4,
+        )
+
+        self.assertEqual(
+            response.data['reviewer'],
+            self.user.id,
+        )
+
+    def test_post_review_refects_duplicate_review(self):
+        response = self.client.post(
+            '/api/reviews/',
+            {
+                'business_user': self.business_user.id,
+                'rating': 5,
+                'description': 'Second review for testing.'
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_post_review_requires_authentication(self):
+        self.client.force_authenticate(
+            user=None,
+        )
+
+        response = self.client.post(
+            '/api/reviews/',
+            {
+                'business_user': self.business_user.id,
+                'rating': 5,
+                'description': 'Should not be created.',
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_post_review_requires_customer_profile(self):
+        self.client.force_authenticate(
+            user=self.business_user,
+        )
+
+        response = self.client.post(
+            '/api/reviews/',
+            {
+                'business_user': self.second_business_user.id,
+                'rating': 4,
+                'description': 'This should be not created.',
+            },
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

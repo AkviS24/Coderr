@@ -19,6 +19,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        if self.instance:
+            return attrs
+        
         reviewer = self.context['request'].user
         business_user = attrs['business_user']
 

@@ -249,3 +249,66 @@ class ReviewListViewTest(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_patch_review_updates_rating_and_description(self):
+        response = self.client.patch(
+            f'/api/reviews/{self.review.id}/',
+            {
+                'rating': 6,
+                'description': 'Updated review',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.review.refresh_from_db()
+
+        self.assertEqual(
+            self.review.rating,
+            6,
+        )
+
+        self.assertEqual(
+            self.review.description,
+            'Updated review',
+        )
+
+    def test_patch_review_requires_authentication(self):
+        self.client.force_authenticate(
+            user=None,
+        )
+
+        response = self.client.patch(
+            f'/api/reviews/{self.review.id}/',
+            {
+                'rating': 5,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_patch_review_only_creator_can_update(self):
+        self.client.force_authenticate(
+            user=self.second_user,
+        )
+
+        response = self.client.patch(
+            f'/api/reviews/{self.review.id}/',
+            {
+                'rating': 5,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

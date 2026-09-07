@@ -1,3 +1,5 @@
+from django.shortcuts import get_object_or_404
+
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -55,4 +57,33 @@ class ReviewListView(APIView):
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+class ReviewDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        review = get_object_or_404(
+            Review,
+            pk=pk,
+        )
+
+        if review.reviewer != request.user:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = ReviewSerializer(
+            review,
+            data=request.data,
+            partial=True,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
         )

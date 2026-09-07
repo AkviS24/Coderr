@@ -244,3 +244,131 @@ class OrderViewTest(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_patch_status_to_completed_as_business_user(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {
+                'status': 'completed',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.order.refresh_from_db()
+
+        self.assertEqual(
+            self.order.status,
+            'completed',
+        )
+
+    def test_patch_status_as_customer_returns_403(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {
+                'status': 'completed',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_patch_with_invalid_or_missing_status_returns_400(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        invalid_response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {
+                'status': 'invalid status',
+            },
+            format='json',
+        )
+
+        missing_response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {},
+            format='json',
+        )
+
+        self.assertEqual(
+            invalid_response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+        self.assertEqual(
+            missing_response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_patch_status_not_authenticated_return_401(self):
+        response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {
+                'status': 'cancelled',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_patch_unknown_order_id_returns_404(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.patch(
+            f'/api/orders/99999/',
+            {
+                'status': 'completed',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_patch_status_only_for_own_orders(self):
+        other_business_user = CustomUser.objects.create_user(
+            username='other user',
+            password='otherpassword123!',
+            type='business',
+        )
+
+        self.client.force_authenticate(
+            user=other_business_user,
+        )
+
+        response = self.client.patch(
+            f'/api/orders/{self.order.id}/',
+            {
+                'status': 'completed',
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

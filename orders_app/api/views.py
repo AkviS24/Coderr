@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
 from rest_framework import status
@@ -6,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import Order
-from .serializers import OrderSerializer
+from .serializers import OrderSerializer, OrderStatusSerializer
 
 
 class OrderListCreateView(APIView):
@@ -43,4 +44,34 @@ class OrderListCreateView(APIView):
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+
+class OrderDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, pk):
+        order = get_object_or_404(
+            Order,
+            pk=pk,
+        )
+
+        if order.business_user != request.user:
+            return Response(
+                {
+                    'details': 'Only the business user of the order can update it.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        serializer = OrderStatusSerializer(
+            order,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
         )

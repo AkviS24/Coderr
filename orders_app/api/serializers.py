@@ -58,3 +58,12 @@ class OrderSerializer(serializers.ModelSerializer):
             offer_type=offer_detail.offer_type,
             status='in_progress',
         )
+
+
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = [
+            'status',
+        ]

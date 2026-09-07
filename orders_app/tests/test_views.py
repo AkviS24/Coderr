@@ -1,5 +1,5 @@
-from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework.test import APITestCase
 
 from auth_app.models import CustomUser
 from offers_app.models import Offer, OfferDetail
@@ -169,3 +169,78 @@ class OrderViewTest(APITestCase):
                     field,
                     order,
                 )
+
+    def test_post_offer_detail_id_to_create_new_order(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.post(
+            '/api/orders/',
+            {
+                'offer_detail_id': self.offer_detail.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        self.assertEqual(
+            Order.objects.count(),
+            3,
+        )
+
+        self.assertEqual(
+            response.data['customer_user'],
+            self.customer.id,
+        )
+
+        self.assertEqual(
+            response.data['business_user'],
+            self.business.id,
+        )
+
+        self.assertEqual(
+            response.data['title'],
+            self.offer_detail.title,
+        )
+
+        self.assertEqual(
+            response.data['status'],
+            'in_progress',
+        )
+
+    def test_post_offer_detail_id_when_not_authenticated(self):
+        response = self.client.post(
+            '/api/orders/',
+            {
+                'offer_detail_id': self.offer_detail.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_post_offer_detail_id_as_a_business_user(self):
+        self.client.force_authenticate(
+            user=self.business,
+        )
+
+        response = self.client.post(
+            '/api/orders/',
+            {
+                'offer_detail_id': self.offer_detail.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )

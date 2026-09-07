@@ -38,4 +38,8 @@ urlpatterns = [
         OfferDetailView.as_view(),
         name='offerdetail-detail',
     ),
+    path(
+        'api/orders/',
+        include('orders_app.api.urls'),
+    ),
 ]

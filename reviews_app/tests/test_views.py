@@ -312,3 +312,62 @@ class ReviewListViewTest(APITestCase):
             response.status_code,
             status.HTTP_403_FORBIDDEN,
         )
+
+    def test_delete_review_deletes_review(self):
+        response = self.client.delete(
+            f'/api/reviews/{self.review.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            Review.objects.filter(
+                id=self.review.id,
+            ).exists(),
+        )
+
+        self.assertEqual(
+            response.content,
+            b'',
+        )
+
+    def test_delete_review_requires_authentication(self):
+        self.client.force_authenticate(
+            user=None,
+        )
+
+        response = self.client.delete(
+            f'/api/reviews/{self.review.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED,
+        )
+
+    def test_delete_review_only_creator_can_delete(self):
+        self.client.force_authenticate(
+            user=self.second_user,
+        )
+
+        response = self.client.delete(
+            f'/api/reviews/{self.review.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_delete_review_returns_404_for_missing_review(self):
+        response = self.client.delete(
+            f'/api/reviews/9999/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )

@@ -63,13 +63,21 @@ class ReviewListView(APIView):
 class ReviewDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, pk):
+    def get_owned_review(self, request, pk):
         review = get_object_or_404(
             Review,
             pk=pk,
         )
 
         if review.reviewer != request.user:
+            return None
+
+        return review
+
+    def patch(self, request, pk):
+        review = self.get_owned_review(request, pk)
+
+        if review is None:
             return Response(
                 status=status.HTTP_403_FORBIDDEN,
             )
@@ -86,4 +94,18 @@ class ReviewDetailView(APIView):
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,
+        )
+
+    def delete(self, request, pk):
+        review = self.get_owned_review(request, pk)
+
+        if review is None:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        review.delete()
+
+        return Response(
+            status=status.HTTP_204_NO_CONTENT,
         )

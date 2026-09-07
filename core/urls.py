@@ -53,4 +53,8 @@ urlpatterns = [
         CompletedOrderCountView.as_view(),
         name='completed-order-count',
     ),
+    path(
+        'api/reviews/',
+        include('reviews_app.api.urls'),
+    ),
 ]

@@ -15,11 +15,18 @@ from .serializers import (
     OfferUpdateSerializer,
     OfferDetailSerializer,
 )
+from .permissions import IsBusiness
 from ..models import Offer, OfferDetail
 
 
 class OffersListView(APIView):
     """Handle listing and creation of offers."""
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), IsBusiness()]
+
+        return []
+
     def _order_by_min_price(self, offers, descending=False):
         """Order offers by their lowest detail price."""
         offers = offers.annotate(
@@ -194,35 +201,6 @@ class OffersListView(APIView):
                 offer_type=detail_data.get('offer_type'),
             )
 
-    def _check_authentication(self, request):
-        """Ensure the request comes from an authenticated user."""
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Authentication credentials were not provided.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        return None
-
-    def _check_business_user(self, request):
-        """Ensure the authenticated user has the business role."""
-        if request.user.type != 'business':
-            return Response(
-                {'detail': 'Only business user can create offers.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        return None
-
-    def _check_create_permissions(self, request):
-        """Validate authentication and business permission."""
-        authentication_error = self._check_authentication(request)
-
-        if authentication_error:
-            return authentication_error
-
-        return self._check_business_user(request)
-
     def _validate_detail_count(self, request):
         """Ensure exactly three offer details are submitted."""
         if len(request.data.get('details', [])) != 3:
@@ -277,18 +255,12 @@ class OffersListView(APIView):
 
     def post(self, request):
         """Create an offer for an authenticated business user."""
-        permission_error = self._check_create_permissions(request)
-
-        if permission_error:
-            return permission_error
-
         detail_error = self._validate_detail_count(request)
 
         if detail_error:
             return detail_error
 
         serializer = self._validate_offer(request)
-
         offer = self._create_offer_with_details(request, serializer)
 
         return self._build_offer_response(request, offer)

@@ -146,43 +146,8 @@ class OffersListView(APIView):
         offers = self._filter_offers(request, offers)
         return self._paginate_offers(request, offers)
 
-    def post(self, request):
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Authentication credentials were not provided.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        if request.user.type != 'business':
-            return Response(
-                {'detail': 'Only business User can create offers.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if len(request.data.get('details', [])) != 3:
-            return Response(
-                {'detail': 'Exactly three offer details are required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        serializer = OfferCreateSerializer(
-            data=request.data,
-            context={'request': request},
-        )
-
-        if not serializer.is_valid():
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        offer = Offer.objects.create(
-            user=request.user,
-            title=request.data.get('title'),
-            description=request.data.get('description'),
-        )
-
-        for detail_data in serializer.validated_data.get('details', []):
+    def _create_offer_details(self, offer, details):
+        for detail_data in details:
             OfferDetail.objects.create(
                 offer=offer,
                 title=detail_data.get('title'),
@@ -193,13 +158,79 @@ class OffersListView(APIView):
                 offer_type=detail_data.get('offer_type'),
             )
 
+    def _check_create_permissions(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'Authentication credentials were not provided.'},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if request.user.type != 'business':
+            return Response(
+                {'detail': 'Only business user can create offers.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return None
+
+    def _validate_detail_count(self, request):
+        if len(request.data.get('details', [])) != 3:
+            return Response(
+                {'detail': 'Exactly 3 offer details are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return None
+
+    def _create_offer(self, request):
+        return Offer.objects.create(
+            user=request.user,
+            title=request.data.get('title'),
+            description=request.data.get('description'),
+        )
+
+    def _validate_offer(self, request):
+        serializer = OfferCreateSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        return serializer
+
+    def _build_offer_response(self, request, offer):
+        serializer = OfferCreateResponseSerializer(
+            offer,
+            context={'request', request},
+        )
+
         return Response(
-            OfferCreateResponseSerializer(
-                offer,
-                context={'request': request},
-            ).data,
+            serializer.data,
             status=status.HTTP_201_CREATED,
         )
+
+    def post(self, request):
+        permission_error = self._check_create_permissions(request)
+
+        if permission_error:
+            return permission_error
+
+        detail_error = self._validate_detail_count(request)
+
+        if detail_error:
+            return detail_error
+
+        serializer = self._validate_offer(request)
+
+        offer = self._create_offer(request)
+
+        self._create_offer_details(
+            offer,
+            serializer.validated_data.get('details', []),
+        )
+
+        return self._build_offer_response(request, offer)
 
 
 class OfferDetailView(APIView):

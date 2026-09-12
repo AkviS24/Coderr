@@ -53,6 +53,14 @@ class OffersView(APIView):
         creator_id = request.query_params.get('creator_id')
 
         if creator_id:
+            try:
+                creator_id = int(creator_id)
+            except ValueError:
+                return Response(
+                    {'detail': 'Invalid creator_id'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
             offers = offers.filter(
                 user_id=creator_id,
             )

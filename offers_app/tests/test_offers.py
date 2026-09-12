@@ -549,6 +549,16 @@ class OffersTest(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+    def test_get_offers_rejects_invalid_creator_id(self):
+        response = self.client.get(
+            '/api/offers/?creator_id=invalid',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_get_offers_rejects_invalid_ordering(self):
         response = self.client.get(
             '/api/offers/?ordering=title',

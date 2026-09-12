@@ -654,3 +654,31 @@ class OrderViewTest(APITestCase):
             response.data['completed_order_count'],
             1,
         )
+
+    def test_order_count_rejects_customer_user(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.get(
+            f'/api/order-count/{self.customer.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_completed_order_count_rejects_customer_user(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.get(
+            f'/api/order-count/{self.customer.id}/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )

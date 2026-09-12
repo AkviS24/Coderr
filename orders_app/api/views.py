@@ -101,6 +101,7 @@ class OrderCountView(APIView):
         get_object_or_404(
             CustomUser,
             pk=business_user_id,
+            type='business',
         )
         order_count = Order.objects.filter(
             business_user_id=business_user_id,

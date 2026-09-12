@@ -60,13 +60,17 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
 
         for detail_data in details_data:
             detail_id = detail_data.pop('id')
-            detail = instance.offerdetail_set.get(
+            detail = instance.offerdetail_set.filter(
                 id=detail_id,
-            )
+            ).first()
+
+            if detail is None:
+                raise serializers.ValidationError(
+                    {'details': 'Offer detail does not exist.'},
+                )
 
             for field, value in detail_data.items():
                 setattr(detail, field, value)
-
             detail.save()
 
         return instance

@@ -12,6 +12,7 @@ from .serializers import (
     OfferSerializer,
     OfferCreateSerializer,
     OfferUpdateSerializer,
+    OfferDetailSerializer,
 )
 from ..models import Offer, OfferDetail
 
@@ -178,6 +179,7 @@ class OfferDetailView(APIView):
             Offer,
             pk=pk,
         )
+
         if offer.user != request.user:
             return Response(
                 {'detail': 'You are not the owner of this Offer.'},
@@ -196,7 +198,7 @@ class OfferDetailView(APIView):
 
         response_serializer = OfferCreateResponseSerializer(
             offer,
-            context = {'request': request},
+            context={'request': request},
         )
 
         return Response(
@@ -217,6 +219,26 @@ class OfferDetailView(APIView):
             )
 
         offer.delete()
+
         return Response(
             status=status.HTTP_204_NO_CONTENT,
+        )
+
+
+class OfferDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        offer_detail = get_object_or_404(
+            OfferDetail,
+            pk=pk,
+        )
+
+        serializer = OfferDetailSerializer(
+            offer_detail,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
         )

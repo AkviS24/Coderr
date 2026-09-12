@@ -252,18 +252,16 @@ class OfferDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def patch(self, request, pk):
-        offer = get_object_or_404(
-            Offer,
-            pk=pk,
-        )
-
+    def _check_offer_owner(self, request, offer):
         if offer.user != request.user:
             return Response(
-                {'detail': 'You are not the owner of this Offer.'},
+                {'detail': 'You are not the owner of this offer.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        return None
+
+    def _update_offer(self, request, offer):
         serializer = OfferUpdateSerializer(
             offer,
             data=request.data,
@@ -274,15 +272,33 @@ class OfferDetailView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        response_serializer = OfferCreateResponseSerializer(
+        return serializer
+
+    def _build_update_response(self, request, offer):
+        serializer = OfferCreateResponseSerializer(
             offer,
             context={'request': request},
         )
 
         return Response(
-            response_serializer.data,
+            serializer.data,
             status=status.HTTP_200_OK,
         )
+
+    def patch(self, request, pk):
+        offer = get_object_or_404(
+            Offer,
+            pk=pk,
+        )
+
+        owner_error = self._check_offer_owner(request, offer)
+
+        if owner_error:
+            return owner_error
+
+        self._update_offer(request, offer)
+
+        return self._build_update_response(request, offer)
 
     def delete(self, request, pk):
         offer = get_object_or_404(
@@ -290,11 +306,10 @@ class OfferDetailView(APIView):
             pk=pk,
         )
 
-        if offer.user != request.user:
-            return Response(
-                {'detail': 'You are not the owner of this offer.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        owner_error = self._check_offer_owner(request, offer)
+
+        if owner_error:
+            return owner_error
 
         offer.delete()
 

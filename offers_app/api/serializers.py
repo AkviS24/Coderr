@@ -6,8 +6,7 @@ from ..models import Offer, OfferDetail
 
 
 class OfferDetailSerializer(serializers.ModelSerializer):
-    
-
+    """Serialize offer detail data."""
     class Meta:
         model = OfferDetail
         fields = [
@@ -22,6 +21,7 @@ class OfferDetailSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailUpdateSerializer(serializers.ModelSerializer):
+    """Validate offer detail data for updates."""
     id = serializers.IntegerField()
 
     class Meta:
@@ -47,31 +47,36 @@ class OfferDetailUpdateSerializer(serializers.ModelSerializer):
 
 
 class OfferUpdateSerializer(serializers.ModelSerializer):
+    """Validate and update offers with their details."""
     details = OfferDetailUpdateSerializer(
         source='offerdetail_set',
         many=True,
         required=False,
     )
 
+    def _update_detail(self, instance, detail_data):
+        """Update an offer detail belonging to an offer."""
+        detail_id = detail_data.pop('id')
+        detail = instance.offerdetail_set.filter(id=detail_id).first()
+
+        if detail is None:
+            raise serializers.ValidationError(
+                {'details': 'Ôffer detail does not exist.'},
+            )
+
+        for field, value in detail_data.items():
+            setattr(detail, field, value)
+
+        detail.save()
+
     def update(self, instance, validated_data):
+        """Update an offer and its submitted details."""
         details_data = validated_data.pop('offerdetail_set', [])
 
         instance = super().update(instance, validated_data)
 
         for detail_data in details_data:
-            detail_id = detail_data.pop('id')
-            detail = instance.offerdetail_set.filter(
-                id=detail_id,
-            ).first()
-
-            if detail is None:
-                raise serializers.ValidationError(
-                    {'details': 'Offer detail does not exist.'},
-                )
-
-            for field, value in detail_data.items():
-                setattr(detail, field, value)
-            detail.save()
+            self._update_detail(instance, detail_data)
 
         return instance
 
@@ -92,6 +97,7 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailReferenceSerializer(serializers.ModelSerializer):
+    """Serialize an offer detail reference."""
     url = serializers.HyperlinkedIdentityField(
         view_name='offerdetail-detail',
     )
@@ -106,6 +112,7 @@ class OfferDetailReferenceSerializer(serializers.ModelSerializer):
 
 
 class OfferSerializer(serializers.ModelSerializer):
+    """Serialize offers with details and calculated information."""
     details = OfferDetailReferenceSerializer(
         source='offerdetail_set',
         many=True,
@@ -117,6 +124,7 @@ class OfferSerializer(serializers.ModelSerializer):
     user_details = serializers.SerializerMethodField()
 
     def get_min_price(self, obj):
+        """Return the lowest price of the offer details."""
         min_price = obj.offerdetail_set.aggregate(
             min_price=models.Min('price'),
         )['min_price']
@@ -124,11 +132,13 @@ class OfferSerializer(serializers.ModelSerializer):
         return min_price
 
     def get_min_delivery_time(self, obj):
+        """Return the shortest delivery time of the offer details."""
         return obj.offerdetail_set.aggregate(
             min_delivery_time=models.Min('delivery_time_in_days'),
         )['min_delivery_time']
 
     def get_user_details(self, obj):
+        """Return the public details of the offer creator."""
         return {
             'first_name': obj.user.first_name,
             'last_name': obj.user.last_name,
@@ -154,6 +164,7 @@ class OfferSerializer(serializers.ModelSerializer):
 
 
 class OfferCreateResponseSerializer(serializers.ModelSerializer):
+    """Serialize the response after creating an offer."""
     details = OfferDetailSerializer(
         source='offerdetail_set',
         many=True,
@@ -173,6 +184,7 @@ class OfferCreateResponseSerializer(serializers.ModelSerializer):
 
 
 class OfferCreateSerializer(serializers.ModelSerializer):
+    """Validate data for creating an offer."""
     details = OfferDetailSerializer(many=True)
 
     class Meta:

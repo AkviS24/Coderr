@@ -539,6 +539,16 @@ class OffersTest(APITestCase):
             expensive_offer.id,
         )
 
+    def test_get_offers_rejects_invalid_page_size(self):
+        response = self.client.get(
+            '/api/offers/?page_size=invalid',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_get_offers_rejects_invalid_ordering(self):
         response = self.client.get(
             '/api/offers/?ordering=title',

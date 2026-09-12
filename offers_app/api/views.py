@@ -79,11 +79,19 @@ class OffersView(APIView):
                 | Q(description__icontains=search),
             ).distinct()
 
-        paginator = PageNumberPagination()
-        paginator.page_size = request.query_params.get(
+        page_size = request.query_params.get(
             'page_size',
             10,
         )
+
+        try:
+            paginator = PageNumberPagination()
+            paginator.page_size = int(page_size)
+        except ValueError:
+            return Response(
+                {'detail': 'Invalid page size.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         page = paginator.paginate_queryset(
             offers,

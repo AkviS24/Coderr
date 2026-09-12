@@ -15,7 +15,7 @@ from .serializers import (
     OfferUpdateSerializer,
     OfferDetailSerializer,
 )
-from .permissions import IsBusiness
+from .permissions import IsBusiness, IsOfferOwner
 from ..models import Offer, OfferDetail
 
 
@@ -268,7 +268,12 @@ class OffersListView(APIView):
 
 class OfferDetailView(APIView):
     """Handle retrieving, updating, and deleting a single offer."""
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAuthenticated(), IsOfferOwner()]
+
+        return [IsAuthenticated()]
 
     def get(self, request, pk):
         """Return a single offer by its ID."""
@@ -286,16 +291,6 @@ class OfferDetailView(APIView):
             serializer.data,
             status=status.HTTP_200_OK,
         )
-
-    def _check_offer_owner(self, request, offer):
-        """Ensure the requesting user owns the offer."""
-        if offer.user != request.user:
-            return Response(
-                {'detail': 'You are not the owner of this offer.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        return None
 
     def _update_offer(self, request, offer):
         """Validate and save changes to an offer."""
@@ -330,11 +325,7 @@ class OfferDetailView(APIView):
             pk=pk,
         )
 
-        owner_error = self._check_offer_owner(request, offer)
-
-        if owner_error:
-            return owner_error
-
+        self.check_object_permissions(request, offer)
         self._update_offer(request, offer)
 
         return self._build_update_response(request, offer)
@@ -346,11 +337,7 @@ class OfferDetailView(APIView):
             pk=pk,
         )
 
-        owner_error = self._check_offer_owner(request, offer)
-
-        if owner_error:
-            return owner_error
-
+        self.check_object_permissions(request, offer)
         offer.delete()
 
         return Response(

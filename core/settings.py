@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'offers_app',
     'orders_app',
     'reviews_app',
+    'api_app',
 ]
 
 AUTH_USER_MODEL = 'auth_app.CustomUser'

@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path(
         '',
-        views.OffersView.as_view(),
+        views.OffersListView.as_view(),
     ),
     path(
         '<int:pk>/',

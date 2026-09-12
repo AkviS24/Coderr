@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import F, Min, Q
 
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,92 +18,104 @@ from .serializers import (
 from ..models import Offer, OfferDetail
 
 
-class OffersView(APIView):
-
-    def get(self, request):
-        offers = Offer.objects.all()
-
+class OffersListView(APIView):
+    def _order_offers(self, request, offers):
         ordering = request.query_params.get('ordering')
 
         if ordering == 'min_price':
-            offers = offers.annotate(
+            return offers.annotate(
                 ordering_min_price=Min('offerdetail__price'),
             ).order_by(
                 F('ordering_min_price').asc(nulls_last=True),
             )
 
-        elif ordering == '-min_price':
-            offers = offers.annotate(
+        if ordering == 'min_price':
+            return offers.annotate(
                 ordering_min_price=Min('offerdetail__price'),
-            ).order_by('-ordering_min_price')
-        elif ordering in [
-            'updated_at',
-            '-updated_at',
-        ]:
-            offers = offers.order_by(ordering)
-
-        elif ordering is not None:
-            return Response(
-                {'detail': 'Invalid ordering field.'},
-                status=status.HTTP_400_BAD_REQUEST,
+            ).order_by(
+                '-ordering_min_price',
             )
 
-        else:
-            offers = offers.order_by('-created_at')
+        if ordering in ['updated_at', '-updated_at']:
+            return offers.order_by(ordering)
 
+        if ordering is not None:
+            raise ValidationError(
+                {'detail': 'Invalid ordering field.'},
+            )
+
+        return offers.order_by('-created_at')
+
+    def _filter_by_creator(self, request, offers):
         creator_id = request.query_params.get('creator_id')
 
-        if creator_id:
-            try:
-                creator_id = int(creator_id)
-            except ValueError:
-                return Response(
-                    {'detail': 'Invalid creator_id'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            
-            offers = offers.filter(
-                user_id=creator_id,
+        if not creator_id:
+            return offers
+
+        try:
+            creator_id = int(creator_id)
+        except ValueError:
+            raise ValidationError(
+                {'detail': 'Invalid creator_id.'},
             )
 
+        return offers.filter(user_id=creator_id)
+
+    def _filter_by_delivery_time(self, request, offers):
         max_delivery_time = request.query_params.get('max_delivery_time')
 
-        if max_delivery_time:
-            try:
-                max_delivery_time = int(max_delivery_time)
-            except ValueError:
-                return Response(
-                    {'detail': 'Invalid max_delivery_time'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not max_delivery_time:
+            return offers
 
-            offers = offers.filter(
-                offerdetail__delivery_time_in_days__lte=max_delivery_time,
+        try:
+            max_delivery_time = int(max_delivery_time)
+        except ValueError:
+            raise ValidationError(
+                {'detail': 'Invalid max_delivery_time.'},
             )
 
+        return offers.filter(
+            offerdetail__delivery_time_in_days__lte=max_delivery_time,
+        )
+
+    def _filter_by_min_price(self, request, offers):
         min_price = request.query_params.get('min_price')
 
-        if min_price:
-            try:
-                min_price = float(min_price)
-            except ValueError:
-                return Response(
-                    {'detail': 'Invalid min_price.'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-                
-            offers = offers.filter(
-                offerdetail__price__gte=min_price,
+        if not min_price:
+            return offers
+
+        try:
+            min_price = float(min_price)
+        except ValueError:
+            raise ValidationError(
+                {'detail': 'Invalid min_price'},
             )
 
+        return offers.filter(
+            offerdetail__price__gte=min_price,
+        )
+
+    def _filter_by_search(self, request, offers):
         search = request.query_params.get('search')
 
-        if search:
-            offers = offers.filter(
-                Q(title__icontains=search)
-                | Q(description__icontains=search),
-            ).distinct()
+        if not search:
+            return offers
 
+        return offers.filter(
+            Q(title__icontains=search)
+            | Q(description__icontains=search),
+        ).distinct()
+
+    def _filter_offers(self, request, offers):
+        offers = self._order_offers(request, offers)
+        offers = self._filter_by_creator(request, offers)
+        offers = self._filter_by_delivery_time(request, offers)
+        offers = self._filter_by_min_price(request, offers)
+        offers = self._filter_by_search(request, offers)
+
+        return offers
+
+    def _paginate_offers(self, request, offers):
         page_size = request.query_params.get(
             'page_size',
             10,
@@ -112,15 +125,11 @@ class OffersView(APIView):
             paginator = PageNumberPagination()
             paginator.page_size = int(page_size)
         except ValueError:
-            return Response(
-                {'detail': 'Invalid page size.'},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise ValidationError(
+                {'detail': 'Invalid page_size'},
             )
 
-        page = paginator.paginate_queryset(
-            offers,
-            request,
-        )
+        page = paginator.paginate_queryset(offers, request)
 
         serializer = OfferSerializer(
             page,
@@ -132,6 +141,10 @@ class OffersView(APIView):
             serializer.data,
         )
 
+    def get(self, request):
+        offers = Offer.objects.all()
+        offers = self._filter_offers(request, offers)
+        return self._paginate_offers(request, offers)
 
     def post(self, request):
         if not request.user.is_authenticated:

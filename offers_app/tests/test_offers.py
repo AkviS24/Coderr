@@ -451,6 +451,24 @@ class OffersTest(APITestCase):
             [offer['id'] for offer in response.data['results']],
         )
 
+    def test_get_offers_filters_by_search(self):
+        response = self.client.get(
+            '/api/offers/?search=Test',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertTrue(
+            all(
+                'test' in offer['title'].lower()
+                or 'test' in offer['description'].lower()
+                for offer in response.data['results']
+            )
+        )
+
     def test_get_offers_orders_by_updated_at(self):
         older_offer = Offer.objects.create(
             user=self.user,

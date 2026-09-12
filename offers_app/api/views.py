@@ -68,6 +68,14 @@ class OffersView(APIView):
         max_delivery_time = request.query_params.get('max_delivery_time')
 
         if max_delivery_time:
+            try:
+                max_delivery_time = int(max_delivery_time)
+            except ValueError:
+                return Response(
+                    {'detail': 'Invalid max_delivery_time'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             offers = offers.filter(
                 offerdetail__delivery_time_in_days__lte=max_delivery_time,
             )

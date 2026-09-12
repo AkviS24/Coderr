@@ -19,21 +19,28 @@ from ..models import Offer, OfferDetail
 
 
 class OffersListView(APIView):
+    def _order_by_min_price(self, offers, descending=False):
+        offers = offers.annotate(
+            ordering_min_price=Min('offerdetail__price'),
+        )
+
+        if descending:
+            return offers.order_by('-ordering_min_price')
+
+        return offers.order_by(
+            F('ordering_min_price').asc(nulls_last=True),
+        )
+
     def _order_offers(self, request, offers):
         ordering = request.query_params.get('ordering')
 
         if ordering == 'min_price':
-            return offers.annotate(
-                ordering_min_price=Min('offerdetail__price'),
-            ).order_by(
-                F('ordering_min_price').asc(nulls_last=True),
-            )
+            return self._order_by_min_price(offers)
 
-        if ordering == 'min_price':
-            return offers.annotate(
-                ordering_min_price=Min('offerdetail__price'),
-            ).order_by(
-                '-ordering_min_price',
+        if ordering == '-min_price':
+            return self._order_by_min_price(
+                offers,
+                descending=True,
             )
 
         if ordering in ['updated_at', '-updated_at']:
@@ -61,35 +68,47 @@ class OffersListView(APIView):
 
         return offers.filter(user_id=creator_id)
 
-    def _filter_by_delivery_time(self, request, offers):
+    def _get_max_delivery_time(self, request):
         max_delivery_time = request.query_params.get('max_delivery_time')
 
         if not max_delivery_time:
-            return offers
+            return None
 
         try:
-            max_delivery_time = int(max_delivery_time)
+            return int(max_delivery_time)
         except ValueError:
             raise ValidationError(
                 {'detail': 'Invalid max_delivery_time.'},
             )
 
+    def _filter_by_delivery_time(self, request, offers):
+        max_delivery_time = self._get_max_delivery_time(request)
+
+        if max_delivery_time is None:
+            return offers
+
         return offers.filter(
             offerdetail__delivery_time_in_days__lte=max_delivery_time,
         )
 
-    def _filter_by_min_price(self, request, offers):
+    def _get_min_price(self, request):
         min_price = request.query_params.get('min_price')
 
         if not min_price:
-            return offers
+            return None
 
         try:
-            min_price = float(min_price)
+            return float(min_price)
         except ValueError:
             raise ValidationError(
                 {'detail': 'Invalid min_price'},
             )
+
+    def _filter_by_min_price(self, request, offers):
+        min_price = self._get_min_price(request)
+
+        if min_price is None:
+            return offers
 
         return offers.filter(
             offerdetail__price__gte=min_price,
@@ -115,20 +134,25 @@ class OffersListView(APIView):
 
         return offers
 
-    def _paginate_offers(self, request, offers):
+    def _get_paginator(self, request):
         page_size = request.query_params.get(
             'page_size',
             10,
         )
 
         try:
-            paginator = PageNumberPagination()
-            paginator.page_size = int(page_size)
+            page_size = int(page_size)
         except ValueError:
             raise ValidationError(
                 {'detail': 'Invalid page_size'},
             )
 
+        paginator = PageNumberPagination()
+        paginator.page_size = page_size
+        return paginator
+
+    def _paginate_offers(self, request, offers):
+        paginator = self._get_paginator(request)
         page = paginator.paginate_queryset(offers, request)
 
         serializer = OfferSerializer(
@@ -137,9 +161,7 @@ class OffersListView(APIView):
             context={'request': request},
         )
 
-        return paginator.get_paginated_response(
-            serializer.data,
-        )
+        return paginator.get_paginated_response(serializer.data)
 
     def get(self, request):
         offers = Offer.objects.all()
@@ -158,13 +180,16 @@ class OffersListView(APIView):
                 offer_type=detail_data.get('offer_type'),
             )
 
-    def _check_create_permissions(self, request):
+    def _check_authentication(self, request):
         if not request.user.is_authenticated:
             return Response(
                 {'detail': 'Authentication credentials were not provided.'},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        return None
+
+    def _check_business_user(self, request):
         if request.user.type != 'business':
             return Response(
                 {'detail': 'Only business user can create offers.'},
@@ -172,6 +197,14 @@ class OffersListView(APIView):
             )
 
         return None
+
+    def _check_create_permissions(self, request):
+        authentication_error = self._check_authentication(request)
+
+        if authentication_error:
+            return authentication_error
+
+        return self._check_business_user(request)
 
     def _validate_detail_count(self, request):
         if len(request.data.get('details', [])) != 3:
@@ -189,6 +222,16 @@ class OffersListView(APIView):
             description=request.data.get('description'),
         )
 
+    def _create_offer_with_details(self, request, serializer):
+        offer = self._create_offer(request)
+
+        self._create_offer_details(
+            offer,
+            serializer.validated_data.get('details', []),
+        )
+
+        return offer
+
     def _validate_offer(self, request):
         serializer = OfferCreateSerializer(
             data=request.data,
@@ -202,7 +245,7 @@ class OffersListView(APIView):
     def _build_offer_response(self, request, offer):
         serializer = OfferCreateResponseSerializer(
             offer,
-            context={'request', request},
+            context={'request': request},
         )
 
         return Response(
@@ -223,12 +266,7 @@ class OffersListView(APIView):
 
         serializer = self._validate_offer(request)
 
-        offer = self._create_offer(request)
-
-        self._create_offer_details(
-            offer,
-            serializer.validated_data.get('details', []),
-        )
+        offer = self._create_offer_with_details(request, serializer)
 
         return self._build_offer_response(request, offer)
 

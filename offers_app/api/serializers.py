@@ -169,10 +169,13 @@ class OfferCreateResponseSerializer(serializers.ModelSerializer):
 
 
 class OfferCreateSerializer(serializers.ModelSerializer):
+    details = OfferDetailSerializer(many=True)
 
     class Meta:
         model = Offer
         fields = [
             'title',
+            'image',
             'description',
+            'details',
         ]

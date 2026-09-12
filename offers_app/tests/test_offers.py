@@ -875,6 +875,53 @@ class OffersTest(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
 
+    def test_create_offer_rejects_invalid_offer_type(self):
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        data = {
+            'title': 'Invalid Offer',
+            'description': 'Offer with invalid detail type.',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 100.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'invalid',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 200.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'standard',
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 10,
+                    'delivery_time_in_days': 10,
+                    'price': 500.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/api/offers/',
+            data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_create_offer_requires_title(self):
         self.client.force_authenticate(
             user=self.user,

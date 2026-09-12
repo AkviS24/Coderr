@@ -135,7 +135,7 @@ class OffersView(APIView):
             description=request.data.get('description'),
         )
 
-        for detail_data in request.data.get('details', []):
+        for detail_data in serializer.validated_data.get('details', []):
             OfferDetail.objects.create(
                 offer=offer,
                 title=detail_data.get('title'),

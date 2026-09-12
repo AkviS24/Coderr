@@ -75,6 +75,14 @@ class OffersView(APIView):
         min_price = request.query_params.get('min_price')
 
         if min_price:
+            try:
+                min_price = float(min_price)
+            except ValueError:
+                return Response(
+                    {'detail': 'Invalid min_price.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
             offers = offers.filter(
                 offerdetail__price__gte=min_price,
             )

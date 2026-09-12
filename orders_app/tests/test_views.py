@@ -220,6 +220,24 @@ class OrderViewTest(APITestCase):
             'in_progress',
         )
 
+    def test_post_unknown_offer_detail_id_returns_not_found(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.post(
+            '/api/orders/',
+            {
+                'offer_detail_id': self.offer_detail.id + 999,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
     def test_post_offer_detail_id_when_not_authenticated(self):
         response = self.client.post(
             '/api/orders/',

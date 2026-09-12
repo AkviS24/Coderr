@@ -36,14 +36,16 @@ class OffersView(APIView):
                 ordering_min_price=Min('offerdetail__price'),
             ).order_by('-ordering_min_price')
         elif ordering in [
-            'created_at',
             'updated_at',
-            'title',
-            '-created_at',
             '-updated_at',
-            '-title',
         ]:
             offers = offers.order_by(ordering)
+
+        elif ordering is not None:
+            return Response(
+                {'detail': 'Invalid ordering field.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         else:
             offers = offers.order_by('-created_at')

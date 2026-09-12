@@ -539,6 +539,16 @@ class OffersTest(APITestCase):
             expensive_offer.id,
         )
 
+    def test_get_offers_rejects_invalid_ordering(self):
+        response = self.client.get(
+            '/api/offers/?ordering=title',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_get_offers_searches_by_title(self):
         matching_offer = Offer.objects.create(
             user=self.user,

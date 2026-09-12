@@ -1,27 +1,30 @@
-from django.shortcuts import get_object_or_404
 from django.db.models import F, Min, Q
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 
+from ..models import Offer, OfferDetail
+from .permissions import IsBusiness, IsOfferOwner
 from .serializers import (
     OfferCreateResponseSerializer,
-    OfferSerializer,
     OfferCreateSerializer,
-    OfferUpdateSerializer,
     OfferDetailSerializer,
+    OfferSerializer,
+    OfferUpdateSerializer,
 )
-from .permissions import IsBusiness, IsOfferOwner
-from ..models import Offer, OfferDetail
 
 
 class OffersListView(APIView):
     """Handle listing and creation of offers."""
+
     def get_permissions(self):
+        """Return permissions based on the request method."""
+
         if self.request.method == 'POST':
             return [IsAuthenticated(), IsBusiness()]
 
@@ -29,6 +32,7 @@ class OffersListView(APIView):
 
     def _order_by_min_price(self, offers, descending=False):
         """Order offers by their lowest detail price."""
+
         offers = offers.annotate(
             ordering_min_price=Min('offerdetail__price'),
         )
@@ -42,6 +46,7 @@ class OffersListView(APIView):
 
     def _order_offers(self, request, offers):
         """Apply the requested ordering to the offer queryset."""
+
         ordering = request.query_params.get('ordering')
 
         if ordering == 'min_price':
@@ -65,6 +70,7 @@ class OffersListView(APIView):
 
     def _filter_by_creator(self, request, offers):
         """Filter offers by their creator ID."""
+
         creator_id = request.query_params.get('creator_id')
 
         if not creator_id:
@@ -81,6 +87,7 @@ class OffersListView(APIView):
 
     def _get_max_delivery_time(self, request):
         """Read and validate the maximum delivery parameter."""
+
         max_delivery_time = request.query_params.get('max_delivery_time')
 
         if not max_delivery_time:
@@ -94,7 +101,8 @@ class OffersListView(APIView):
             )
 
     def _filter_by_delivery_time(self, request, offers):
-        """filter offers by their maximum delivery time."""
+        """Filter offers by their maximum delivery time."""
+
         max_delivery_time = self._get_max_delivery_time(request)
 
         if max_delivery_time is None:
@@ -106,6 +114,7 @@ class OffersListView(APIView):
 
     def _get_min_price(self, request):
         """Read and validate the minimum price parameter."""
+
         min_price = request.query_params.get('min_price')
 
         if not min_price:
@@ -120,6 +129,7 @@ class OffersListView(APIView):
 
     def _filter_by_min_price(self, request, offers):
         """Filter offers by their minimum detail price."""
+
         min_price = self._get_min_price(request)
 
         if min_price is None:
@@ -130,7 +140,8 @@ class OffersListView(APIView):
         )
 
     def _filter_by_search(self, request, offers):
-        """Filters offers by title or description."""
+        """Filter offers by title or description."""
+
         search = request.query_params.get('search')
 
         if not search:
@@ -143,6 +154,7 @@ class OffersListView(APIView):
 
     def _filter_offers(self, request, offers):
         """Apply ordering and all supported offer filters."""
+
         offers = self._order_offers(request, offers)
         offers = self._filter_by_creator(request, offers)
         offers = self._filter_by_delivery_time(request, offers)
@@ -152,7 +164,8 @@ class OffersListView(APIView):
         return offers
 
     def _get_paginator(self, request):
-        """Creates and configure the offer list paginator."""
+        """Create and configure the offer list paginator."""
+
         page_size = request.query_params.get(
             'page_size',
             10,
@@ -171,6 +184,7 @@ class OffersListView(APIView):
 
     def _paginate_offers(self, request, offers):
         """Serialize and return a paginated offer response."""
+
         paginator = self._get_paginator(request)
         page = paginator.paginate_queryset(offers, request)
 
@@ -183,19 +197,23 @@ class OffersListView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def get(self, request):
-        """Returned a filtered and paginated list of offers."""
+        """Return a filtered and paginated list of offers."""
+
         offers = Offer.objects.all()
         offers = self._filter_offers(request, offers)
         return self._paginate_offers(request, offers)
 
     def _create_offer_details(self, offer, details):
         """Create the three detail records belonging to an offer."""
+
         for detail_data in details:
             OfferDetail.objects.create(
                 offer=offer,
                 title=detail_data.get('title'),
                 revisions=detail_data.get('revisions'),
-                delivery_time_in_days=detail_data.get('delivery_time_in_days'),
+                delivery_time_in_days=detail_data.get(
+                    'delivery_time_in_days',
+                ),
                 price=detail_data.get('price'),
                 features=detail_data.get('features'),
                 offer_type=detail_data.get('offer_type'),
@@ -203,6 +221,7 @@ class OffersListView(APIView):
 
     def _validate_detail_count(self, request):
         """Ensure exactly three offer details are submitted."""
+
         if len(request.data.get('details', [])) != 3:
             return Response(
                 {'detail': 'Exactly 3 offer details are required.'},
@@ -213,6 +232,7 @@ class OffersListView(APIView):
 
     def _create_offer(self, request):
         """Create the main offer record."""
+
         return Offer.objects.create(
             user=request.user,
             title=request.data.get('title'),
@@ -221,6 +241,7 @@ class OffersListView(APIView):
 
     def _create_offer_with_details(self, request, serializer):
         """Create an offer and its validated detail records."""
+
         offer = self._create_offer(request)
 
         self._create_offer_details(
@@ -232,6 +253,7 @@ class OffersListView(APIView):
 
     def _validate_offer(self, request):
         """Validate the submitted offer data."""
+
         serializer = OfferCreateSerializer(
             data=request.data,
             context={'request': request},
@@ -242,7 +264,8 @@ class OffersListView(APIView):
         return serializer
 
     def _build_offer_response(self, request, offer):
-        """Build the succesfull oofer creation response."""
+        """Build the successful offer creation response."""
+
         serializer = OfferCreateResponseSerializer(
             offer,
             context={'request': request},
@@ -255,6 +278,7 @@ class OffersListView(APIView):
 
     def post(self, request):
         """Create an offer for an authenticated business user."""
+
         detail_error = self._validate_detail_count(request)
 
         if detail_error:
@@ -270,6 +294,8 @@ class OfferDetailView(APIView):
     """Handle retrieving, updating, and deleting a single offer."""
 
     def get_permissions(self):
+        """Return permissions based on the request method."""
+
         if self.request.method in ['PATCH', 'DELETE']:
             return [IsAuthenticated(), IsOfferOwner()]
 
@@ -277,6 +303,7 @@ class OfferDetailView(APIView):
 
     def get(self, request, pk):
         """Return a single offer by its ID."""
+
         offer = get_object_or_404(
             Offer,
             pk=pk,
@@ -294,6 +321,7 @@ class OfferDetailView(APIView):
 
     def _update_offer(self, request, offer):
         """Validate and save changes to an offer."""
+
         serializer = OfferUpdateSerializer(
             offer,
             data=request.data,
@@ -307,7 +335,8 @@ class OfferDetailView(APIView):
         return serializer
 
     def _build_update_response(self, request, offer):
-        """Build the succesfull offer update response."""
+        """Build the successful offer update response."""
+
         serializer = OfferCreateResponseSerializer(
             offer,
             context={'request': request},
@@ -320,6 +349,7 @@ class OfferDetailView(APIView):
 
     def patch(self, request, pk):
         """Update an offer owned by the requesting user."""
+
         offer = get_object_or_404(
             Offer,
             pk=pk,
@@ -332,6 +362,7 @@ class OfferDetailView(APIView):
 
     def delete(self, request, pk):
         """Delete an offer owned by the requesting user."""
+
         offer = get_object_or_404(
             Offer,
             pk=pk,
@@ -347,10 +378,12 @@ class OfferDetailView(APIView):
 
 class OfferDetailsView(APIView):
     """Handle retrieving a single offer detail."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         """Return a single offer detail by its ID."""
+
         offer_detail = get_object_or_404(
             OfferDetail,
             pk=pk,

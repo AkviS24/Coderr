@@ -20,6 +20,13 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if self.instance:
+            allowed_fields = {'rating', 'description'}
+
+            if set(attrs) - allowed_fields:
+                raise serializers.ValidationError(
+                    'Only rating and description can be updated.',
+                )
+
             return attrs
         
         reviewer = self.context['request'].user

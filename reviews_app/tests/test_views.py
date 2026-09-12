@@ -277,6 +277,20 @@ class ReviewListViewTest(APITestCase):
             'Updated review',
         )
 
+    def test_patch_review_rejects_business_user(self):
+        response = self.client.patch(
+            f'/api/reviews/{self.review.id}/',
+            {
+                'business_user': self.business_user.id,
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
     def test_patch_review_requires_authentication(self):
         self.client.force_authenticate(
             user=None,

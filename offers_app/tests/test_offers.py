@@ -1,6 +1,9 @@
 from datetime import timedelta
+from io import BytesIO
+from PIL import Image
 
 from django.utils import timezone
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -771,6 +774,91 @@ class OffersTest(APITestCase):
                 'id',
                 detail,
             )
+
+    def test_create_offer_saves_image(self):
+        offer_data = {
+            'title': 'Test Offer',
+            'description': 'Test description',
+            'details': [
+                {
+                    'title': 'Basic',
+                    'revisions': 2,
+                    'delivery_time_in_days': 5,
+                    'price': 150.00,
+                    'features': ['Logo Design'],
+                    'offer_type': 'basic',
+                },
+                {
+                    'title': 'Standard',
+                    'revisions': 5,
+                    'delivery_time_in_days': 7,
+                    'price': 400.00,
+                    'features': ['Logo Design', 'Visitenkarte'],
+                    'offer_type': 'standard',
+                },
+                {
+                    'title': 'Premium',
+                    'revisions': 12,
+                    'delivery_time_in_days': 15,
+                    'price': 1500.00,
+                    'features': ['Logo Design', 'Visitenkarte', 'Flyer'],
+                    'offer_type': 'premium',
+                },
+            ],
+        }
+
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.post(
+            '/api/offers/',
+            data=offer_data,
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        offer = Offer.objects.get(
+            id=response.data['id'],
+        )
+
+        image_buffer = BytesIO()
+        Image.new(
+            'RGB',
+            (1, 1),
+            color='white',
+        ).save(
+            image_buffer,
+            format='JPEG',
+        )
+
+        image = SimpleUploadedFile(
+            'offer.jpg',
+            image_buffer.getvalue(),
+            content_type='image/jpeg',
+        )
+
+        response = self.client.patch(
+            f'/api/offers/{offer.id}/',
+            {'image': image},
+            format='multipart',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        offer.refresh_from_db()
+
+        self.assertTrue(offer.image)
+        self.assertTrue(
+            offer.image.name.endswith('.jpg'),
+        )
 
     def test_create_offer_returns_complete_details(self):
         self.client.force_authenticate(

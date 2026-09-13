@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from auth_app.models import CustomUser
+from offers_app.models import OfferDetail
 
 from ..models import Order
 from .serializers import OrderSerializer, OrderStatusSerializer
@@ -35,6 +36,16 @@ class OrderListCreateView(APIView):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        offer_detail_id = request.data.get(
+            'offer_detail_id',
+        )
+        if str(offer_detail_id).isdigit():
+            get_object_or_404(
+                OfferDetail,
+                pk=offer_detail_id,
+            )
+
         serializer = OrderSerializer(
             data=request.data,
             context={'request': request},
@@ -56,7 +67,7 @@ class OrderDetailView(APIView):
             Order,
             pk=pk,
         )
-        if order.business_user != request.user:
+        if request.user.type != 'business' or order.business_user != request.user:
             return Response(
                 {
                     'details': 'Only the business user of the order can update it.',
@@ -123,6 +134,7 @@ class CompletedOrderCountView(APIView):
         get_object_or_404(
             CustomUser,
             pk=business_user_id,
+            type='business',
         )
         completed_order_count = Order.objects.filter(
             business_user_id=business_user_id,

@@ -1,3 +1,5 @@
+from django.urls import reverse
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -270,6 +272,76 @@ class OrderViewTest(APITestCase):
             status.HTTP_403_FORBIDDEN,
         )
 
+    def test_post_without_offer_detail_id_returns_400(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.post(
+            reverse('order-list'),
+            {},
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_post_with_unknown_offer_detail_id_returns_404(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.post(
+            reverse('order-list'),
+            {'offer_detail_id': 9999},
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_post_with_invalid_offer_detail_id_returns_400(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.post(
+            reverse('order-list'),
+            {'offer_detail_id': 'abc'},
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_patch_status_as_customer_as_business_user_returns_403(self):
+        self.order.business_user = self.customer
+        self.order.save()
+
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+
+        response = self.client.patch(
+            reverse(
+                'order-detail',
+                kwargs={'pk': self.order.id},
+            ),
+            {'status': 'completed'},
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN,
+        )
+
     def test_patch_status_to_completed_as_business_user(self):
         self.client.force_authenticate(
             user=self.business,
@@ -470,6 +542,22 @@ class OrderViewTest(APITestCase):
             status.HTTP_403_FORBIDDEN,
         )
 
+    def test_order_count_customer_user_returns_404(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+        response = self.client.get(
+            reverse(
+                'order-count',
+                kwargs={'business_user_id': self.customer.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
     def test_order_count_returns_in_progress_orders(self):
         self.client.force_authenticate(
             user=self.business,
@@ -567,6 +655,22 @@ class OrderViewTest(APITestCase):
         self.assertEqual(
             response.data['order_count'],
             0,
+        )
+
+    def test_completed_order_count_customer_user_returns_404(self):
+        self.client.force_authenticate(
+            user=self.customer,
+        )
+        response = self.client.get(
+            reverse(
+                'completed-order-count',
+                kwargs={'business_user_id': self.customer.id},
+            )
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_completed_order_count_returns_completed_orders_(self):

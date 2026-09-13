@@ -1,28 +1,17 @@
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 
 from ..models import Order
 from offers_app.models import OfferDetail
 
 
-class OfferDetailField(serializers.PrimaryKeyRelatedField):
-    def to_internal_value(self, data):
-        try:
-            return super().to_internal_value(data)
-        except serializers.ValidationError as error:
-            raise NotFound(
-                'Offer detail does not exist.',
-            ) from error
-
-
 class OrderSerializer(serializers.ModelSerializer):
-    offer_detail_id = OfferDetailField(
+    offer_detail_id = serializers.PrimaryKeyRelatedField(
         queryset=OfferDetail.objects.all(),
         write_only=True,
     )
 
     class Meta:
-        model= Order
+        model = Order
         fields = [
             'id',
             'offer_detail_id',

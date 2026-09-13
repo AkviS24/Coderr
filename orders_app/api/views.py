@@ -10,12 +10,21 @@ from auth_app.models import CustomUser
 from offers_app.models import OfferDetail
 
 from ..models import Order
-from .permissions import IsOrderBusinessUser
+from .permissions import (
+    IsCustomerUser,
+    IsOrderBusinessUser,
+    IsStaffUser,
+)
 from .serializers import OrderSerializer, OrderStatusSerializer
 
 
 class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), IsCustomerUser()]
+        return [IsAuthenticated()]
 
     def get(self, request):
         orders = Order.objects.filter(
@@ -30,14 +39,6 @@ class OrderListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        if request.user.type != 'customer':
-            return Response(
-                {
-                    'details': 'Only users with type customer can create orders.',
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         offer_detail_id = request.data.get(
             'offer_detail_id',
         )
@@ -66,6 +67,8 @@ class OrderDetailView(APIView):
     def get_permissions(self):
         if self.request.method == 'PATCH':
             return [IsAuthenticated(), IsOrderBusinessUser()]
+        if self.request.method == 'DELETE':
+            return [IsAuthenticated(), IsStaffUser()]
         return [IsAuthenticated()]
 
     def patch(self, request, pk):
@@ -91,13 +94,6 @@ class OrderDetailView(APIView):
             Order,
             pk=pk,
         )
-        if not request.user.is_staff:
-            return Response(
-                {
-                    'details': 'Only staff users can delete orders',
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
         order.delete()
 
         return Response(

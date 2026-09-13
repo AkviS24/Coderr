@@ -10,6 +10,7 @@ from auth_app.models import CustomUser
 from offers_app.models import OfferDetail
 
 from ..models import Order
+from .permissions import IsOrderBusinessUser
 from .serializers import OrderSerializer, OrderStatusSerializer
 
 
@@ -62,18 +63,17 @@ class OrderListCreateView(APIView):
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.request.method == 'PATCH':
+            return [IsAuthenticated(), IsOrderBusinessUser()]
+        return [IsAuthenticated()]
+
     def patch(self, request, pk):
         order = get_object_or_404(
             Order,
             pk=pk,
         )
-        if request.user.type != 'business' or order.business_user != request.user:
-            return Response(
-                {
-                    'details': 'Only the business user of the order can update it.',
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        self.check_object_permissions(request, order)
         serializer = OrderStatusSerializer(
             order,
             data=request.data,

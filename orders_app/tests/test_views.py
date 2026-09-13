@@ -9,6 +9,8 @@ from ..models import Order
 
 
 class OrderViewTest(APITestCase):
+    """Tests order API endpoints."""
+
     def setUp(self):
         self.customer = CustomUser.objects.create_user(
             username='customer',

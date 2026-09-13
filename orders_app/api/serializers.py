@@ -10,6 +10,8 @@ class OfferDetailField(serializers.PrimaryKeyRelatedField):
     """Returns 404 when the requested offer detail does not exist."""
 
     def to_internal_value(self, data):
+        """Converts and validates the offer detail ID."""
+
         try:
             return super().to_internal_value(data)
         except serializers.ValidationError:
@@ -76,7 +78,6 @@ class OrderSerializer(serializers.ModelSerializer):
             offer_type=offer_detail.offer_type,
             status='in_progress',
         )
-
 
 
 class OrderStatusSerializer(serializers.ModelSerializer):

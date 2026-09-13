@@ -5,8 +5,9 @@ from offers_app.models import Offer, OfferDetail
 from orders_app.api.serializers import OrderSerializer
 
 
-
 class OrderSerializerTest(TestCase):
+    """Tests the order serializer."""
+
     def setUp(self):
         self.customer = CustomUser.objects.create_user(
             username='customer',

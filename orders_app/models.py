@@ -2,8 +2,10 @@ from django.db import models
 
 from auth_app.models import CustomUser
 
-# Create your models here.
+
 class Order(models.Model):
+    """Represents an order between a customer and a business user."""
+
     customer_user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,

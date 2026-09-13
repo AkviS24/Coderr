@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from auth_app.models import CustomUser
-from offers_app.models import OfferDetail
 
 from ..models import Order
 from .permissions import (
@@ -39,15 +38,6 @@ class OrderListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        offer_detail_id = request.data.get(
-            'offer_detail_id',
-        )
-        if str(offer_detail_id).isdigit():
-            get_object_or_404(
-                OfferDetail,
-                pk=offer_detail_id,
-            )
-
         serializer = OrderSerializer(
             data=request.data,
             context={'request': request},

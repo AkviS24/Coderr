@@ -34,7 +34,7 @@ class OffersListView(APIView):
         """Order offers by their lowest detail price."""
 
         offers = offers.annotate(
-            ordering_min_price=Min('offerdetail__price'),
+            ordering_min_price=Min('details__price'),
         )
 
         if descending:
@@ -109,7 +109,7 @@ class OffersListView(APIView):
             return offers
 
         return offers.filter(
-            offerdetail__delivery_time_in_days__lte=max_delivery_time,
+            details__delivery_time_in_days__lte=max_delivery_time,
         )
 
     def _get_min_price(self, request):
@@ -136,7 +136,7 @@ class OffersListView(APIView):
             return offers
 
         return offers.filter(
-            offerdetail__price__gte=min_price,
+            details__price__gte=min_price,
         )
 
     def _filter_by_search(self, request, offers):
@@ -204,7 +204,7 @@ class OffersListView(APIView):
         return self._paginate_offers(request, offers)
 
     def _create_offer_details(self, offer, details):
-        """Create the three detail records belonging to an offer."""
+        """Create the detail records belonging to an offer."""
 
         for detail_data in details:
             OfferDetail.objects.create(

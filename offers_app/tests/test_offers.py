@@ -1494,6 +1494,60 @@ class OffersTest(APITestCase):
                 detail,
             )
 
+    def test_patch_offer_updates_existing_offer_detail(self):
+        detail = OfferDetail.objects.create(
+            offer=self.offer,
+            title='Basic',
+            revisions=2,
+            delivery_time_in_days=5,
+            price=150.00,
+            features=['Logo Design'],
+            offer_type='basic',
+        )
+
+        detail_id = detail.id
+
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'details': [
+                    {
+                        'id': detail.id,
+                        'title': 'Updated Basic',
+                        'price': 380.00,
+                        'offer_type': 'basic',
+                    },
+                ],
+            },
+            format='json',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        detail.refresh_from_db()
+
+        self.assertEqual(
+            detail.id,
+            detail.id,
+        )
+
+        self.assertEqual(
+            detail.title,
+            'Updated Basic',
+        )
+
+        self.assertEqual(
+            detail.price,
+            380.00,
+        )
+
     def test_patch_offer_rejects_unknown_offer_detail_id(self):
         offer = Offer.objects.create(
             user=self.user,

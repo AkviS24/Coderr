@@ -45,11 +45,9 @@ class OfferDetailUpdateSerializer(serializers.ModelSerializer):
         }
 
 
-
 class OfferUpdateSerializer(serializers.ModelSerializer):
     """Validate and update offers with their details."""
     details = OfferDetailUpdateSerializer(
-        source='offerdetail_set',
         many=True,
         required=False,
     )
@@ -57,11 +55,11 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
     def _update_detail(self, instance, detail_data):
         """Update an offer detail belonging to an offer."""
         detail_id = detail_data.pop('id')
-        detail = instance.offerdetail_set.filter(id=detail_id).first()
+        detail = instance.details.filter(id=detail_id).first()
 
         if detail is None:
             raise serializers.ValidationError(
-                {'details': 'Ôffer detail does not exist.'},
+                {'details': 'Offer detail does not exist.'},
             )
 
         for field, value in detail_data.items():
@@ -71,7 +69,7 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update an offer and its submitted details."""
-        details_data = validated_data.pop('offerdetail_set', [])
+        details_data = validated_data.pop('details', [])
 
         instance = super().update(instance, validated_data)
 
@@ -95,7 +93,6 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
         }
 
 
-
 class OfferDetailReferenceSerializer(serializers.ModelSerializer):
     """Serialize an offer detail reference."""
     url = serializers.HyperlinkedIdentityField(
@@ -110,11 +107,9 @@ class OfferDetailReferenceSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class OfferSerializer(serializers.ModelSerializer):
     """Serialize offers with details and calculated information."""
     details = OfferDetailReferenceSerializer(
-        source='offerdetail_set',
         many=True,
         read_only=True,
     )
@@ -125,7 +120,7 @@ class OfferSerializer(serializers.ModelSerializer):
 
     def get_min_price(self, obj):
         """Return the lowest price of the offer details."""
-        min_price = obj.offerdetail_set.aggregate(
+        min_price = obj.details.aggregate(
             min_price=models.Min('price'),
         )['min_price']
 
@@ -133,7 +128,7 @@ class OfferSerializer(serializers.ModelSerializer):
 
     def get_min_delivery_time(self, obj):
         """Return the shortest delivery time of the offer details."""
-        return obj.offerdetail_set.aggregate(
+        return obj.details.aggregate(
             min_delivery_time=models.Min('delivery_time_in_days'),
         )['min_delivery_time']
 
@@ -162,11 +157,9 @@ class OfferSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class OfferCreateResponseSerializer(serializers.ModelSerializer):
     """Serialize the response after creating an offer."""
     details = OfferDetailSerializer(
-        source='offerdetail_set',
         many=True,
         read_only=True,
     )
@@ -180,7 +173,6 @@ class OfferCreateResponseSerializer(serializers.ModelSerializer):
             'description',
             'details',
         ]
-
 
 
 class OfferCreateSerializer(serializers.ModelSerializer):

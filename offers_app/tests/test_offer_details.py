@@ -6,6 +6,7 @@ from offers_app.models import Offer, OfferDetail
 
 
 class OfferDetailTest(APITestCase):
+    """Tests the offer detail API endpoint."""
 
     def setUp(self):
         self.user = CustomUser.objects.create_user(

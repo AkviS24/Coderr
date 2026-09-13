@@ -2,7 +2,7 @@ from django.db import models
 
 from auth_app.models import CustomUser
 
-# Create your models here.
+
 class Offer(models.Model):
     user = models.ForeignKey(
         CustomUser,
@@ -23,11 +23,11 @@ class Offer(models.Model):
         return self.title
 
 
-
 class OfferDetail(models.Model):
     offer = models.ForeignKey(
         Offer,
         on_delete=models.CASCADE,
+        related_name='details',
     )
     title = models.CharField(
         max_length=35,

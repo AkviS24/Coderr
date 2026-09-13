@@ -60,7 +60,7 @@ class IsOfferOwnerTests(TestCase):
         self.permission = IsOfferOwner()
 
     def test_offer_owner_has_permission(self):
-        """Allow the owner off an offer."""
+        """Allow the owner of an offer."""
         user = SimpleNamespace(id=1)
         offer = SimpleNamespace(user=user)
         request = SimpleNamespace(user=user)

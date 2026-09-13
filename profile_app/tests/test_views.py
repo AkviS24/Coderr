@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 from auth_app.models import CustomUser
 from ..models import UserProfile
 
+
 class UserProfileViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -15,7 +16,7 @@ class UserProfileViewTest(TestCase):
         )
 
         self.profile = UserProfile.objects.create(
-            user = self.user,
+            user=self.user,
         )
 
     def test_get_own_profile(self):
@@ -115,7 +116,7 @@ class UserProfileViewTest(TestCase):
             status.HTTP_401_UNAUTHORIZED,
         )
 
-    def test_patch_profile_bot_found(self):
+    def test_patch_profile_not_found(self):
         self.client.force_authenticate(
                     user=self.user,
                 )

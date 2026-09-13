@@ -12,7 +12,6 @@ class UserProfileModelTest(TestCase):
             password='testpassword123!',
         )
 
-
     def test_user_to_profile(self):
         profile = UserProfile.objects.create(
             user=self.user,

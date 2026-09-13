@@ -8,16 +8,19 @@ from ..models import UserProfile
 from .serializers import UserProfileSerializer, ProfileListSerializer
 
 
-
 class UserProfileView(APIView):
+    """Handle requests for individual user profiles."""
+
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
-        profile = get_object_or_404(
+    def get_profile(self, pk):
+        return get_object_or_404(
             UserProfile,
-            pk=pk
+            pk=pk,
         )
 
+    def get(self, request, pk):
+        profile = self.get_profile(pk)
         serializer = UserProfileSerializer(profile)
 
         return Response(
@@ -26,10 +29,8 @@ class UserProfileView(APIView):
         )
 
     def patch(self, request, pk):
-        profile = get_object_or_404(
-            UserProfile,
-            pk=pk,
-        )
+        profile = self.get_profile(pk)
+
         if profile.user != request.user:
             return Response(
                 status=status.HTTP_403_FORBIDDEN,
@@ -51,6 +52,8 @@ class UserProfileView(APIView):
 
 
 class ProfileListView(APIView):
+    """Handle requests for filtered profile lists."""
+
     permission_classes = [IsAuthenticated]
 
     profile_type = None
@@ -75,15 +78,17 @@ class ProfileListView(APIView):
             profiles = self.get_profiles()
         except Exception:
             return self.server_error_response()
-        
+
         serializer = ProfileListSerializer(
             profiles,
             many=True,
         )
+
         return Response(
             serializer.data,
             status=status.HTTP_200_OK,
         )
+
 
 class BusinessProfilesView(ProfileListView):
     profile_type = 'business'

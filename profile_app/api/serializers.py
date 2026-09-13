@@ -3,26 +3,32 @@ from rest_framework import serializers
 from ..models import UserProfile
 
 
-
 class UserProfileSerializer(serializers.ModelSerializer):
+    """Serialize user profile data."""
+
     username = serializers.CharField(source='user.username')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
     type = serializers.CharField(source='user.type')
     email = serializers.EmailField(source='user.email')
 
-    def update(self, instance, validated_data):
-        user_data = validated_data.pop('user', {})
-
+    def _update_user(self, instance, user_data):
         for field, value in user_data.items():
             setattr(instance.user, field, value)
 
         instance.user.save()
 
+    def _update_profile(self, instance, validated_data):
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
         instance.save()
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+
+        self._update_user(instance, user_data)
+        self._update_profile(instance, validated_data)
 
         return instance
 
@@ -53,6 +59,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class ProfileListSerializer(serializers.ModelSerializer):
+    """Serialize profile list data."""
+
     username = serializers.CharField(source='user.username')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')

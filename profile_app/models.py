@@ -1,8 +1,10 @@
 from django.db import models
 from auth_app.models import CustomUser
 
-# Create your models here.
+
 class UserProfile(models.Model):
+    """Store profile information for a user."""
+
     user = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
@@ -22,3 +24,6 @@ class UserProfile(models.Model):
     working_hours = models.CharField(max_length=25, blank=True, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user.username

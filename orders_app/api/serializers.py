@@ -19,6 +19,8 @@ class OfferDetailField(serializers.PrimaryKeyRelatedField):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """Serializes orders and creates orders from offer details."""
+
     offer_detail_id = OfferDetailField(
         queryset=OfferDetail.objects.all(),
         write_only=True,
@@ -57,6 +59,8 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        """Creates an order from the selected offer detail."""
+
         offer_detail = validated_data.pop('offer_detail_id')
         customer = self.context['request'].user
         business = offer_detail.offer.user
@@ -76,6 +80,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderStatusSerializer(serializers.ModelSerializer):
+    """Serializes order status updates."""
+
     class Meta:
         model = Order
         fields = [

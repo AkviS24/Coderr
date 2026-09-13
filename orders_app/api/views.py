@@ -18,6 +18,8 @@ from .serializers import OrderSerializer, OrderStatusSerializer
 
 
 class OrderListCreateView(APIView):
+    """Handles listing and creating orders."""
+
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
@@ -52,6 +54,8 @@ class OrderListCreateView(APIView):
 
 
 class OrderDetailView(APIView):
+    """Handles updating and deleting individual orders."""
+
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
@@ -92,6 +96,8 @@ class OrderDetailView(APIView):
 
 
 class OrderCountView(APIView):
+    """Returns the number of in-progress orders for a business user."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
@@ -114,6 +120,8 @@ class OrderCountView(APIView):
 
 
 class CompletedOrderCountView(APIView):
+    """Returns the number of completed orders for a business user."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):

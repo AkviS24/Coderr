@@ -2,12 +2,14 @@ from rest_framework import serializers
 
 
 class RegistrationSerializer(serializers.Serializer):
+    """Validate user registration data."""
+
     username = serializers.CharField()
     email = serializers.EmailField()
     password = serializers.CharField()
     repeated_password = serializers.CharField()
     type = serializers.ChoiceField(
-        choices = (
+        choices=(
             ('customer', 'Customer'),
             ('business', 'Business'),
         ),
@@ -17,7 +19,7 @@ class RegistrationSerializer(serializers.Serializer):
         if attrs['password'] != attrs['repeated_password']:
             raise serializers.ValidationError(
                 {
-                    'repeated_password': 'Password do not match.'
+                    'repeated_password': 'Passwords do not match.'
                 }
             )
 
@@ -25,5 +27,7 @@ class RegistrationSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """Validate user login data."""
+
     username = serializers.CharField()
     password = serializers.CharField()

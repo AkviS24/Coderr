@@ -1,8 +1,9 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
-# Create your models here.
+
 class CustomUser(AbstractUser):
+    """Represent a Coderr user with a customer or business type."""
 
     TYPE_CHOICES = (
         ('customer', 'Customer'),
@@ -12,5 +13,5 @@ class CustomUser(AbstractUser):
     type = models.CharField(
         max_length=10,
         choices=TYPE_CHOICES,
-        default='customer'
+        default='customer',
     )

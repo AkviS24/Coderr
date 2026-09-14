@@ -4,8 +4,9 @@ from ..api.serializers import RegistrationSerializer
 
 
 class RegistrationSerializerTest(TestCase):
+    """Test registration data validation."""
 
-    def test_valid_registraton_data(self):
+    def test_valid_registration_data(self):
         data = {
             'username': 'testuser',
             'email': 'test@tester.de',
@@ -17,7 +18,6 @@ class RegistrationSerializerTest(TestCase):
         serializer = RegistrationSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())
-
 
     def test_password_must_match(self):
         data = {
@@ -32,7 +32,6 @@ class RegistrationSerializerTest(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn('repeated_password', serializer.errors)
-
 
     def test_invalid_user_type(self):
         data = {

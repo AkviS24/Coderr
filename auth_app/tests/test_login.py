@@ -1,13 +1,15 @@
-from django.test import TestCase
+from unittest.mock import patch
 
+from django.test import TestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from unittest.mock import patch
 
 from auth_app.models import CustomUser
 
 
 class LoginViewTest(TestCase):
+    """Test user login through the API."""
+
     def setUp(self):
         self.user = CustomUser.objects.create_user(
             username='testuser',
@@ -16,54 +18,29 @@ class LoginViewTest(TestCase):
             type='customer',
         )
 
-    def test_login_success(self):
+    def _login_user(self):
         data = {
             'username': 'testuser',
             'password': 'testpassword123!',
         }
-        response = self.client.post(
+        return self.client.post(
             '/api/login/',
             data,
         )
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-        )
-        self.assertIn(
-            'token',
-            response.data,
-        )
-        self.assertIn(
-            'username',
-            response.data,
-        )
-        self.assertIn(
-            'email',
-            response.data,
-        )
-        self.assertIn(
-            'user_id',
-            response.data,
-        )
-        self.assertEqual(
-            response.data['username'],
-            self.user.username,
-        )
-        self.assertEqual(
-            response.data['email'],
-            self.user.email,
-        )
-        self.assertEqual(
-            response.data['user_id'],
-            self.user.id,
-        )
-        token = Token.objects.get(
-            user=self.user,
-        )
-        self.assertEqual(
-            response.data['token'],
-            token.key,
-        )
+
+    def test_login_success(self):
+        response = self._login_user()
+        token = Token.objects.get(user=self.user)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+        self.assertIn('username', response.data)
+        self.assertIn('email', response.data)
+        self.assertIn('user_id', response.data)
+        self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(response.data['email'], self.user.email)
+        self.assertEqual(response.data['user_id'], self.user.id)
+        self.assertEqual(response.data['token'], token.key)
 
     def test_login_invalid_credentials(self):
         data = {
@@ -80,19 +57,11 @@ class LoginViewTest(TestCase):
         )
 
     def test_login_internal_server_error(self):
-        data = {
-            'username': 'testuser',
-            'password': 'testpassword123!',
-        }
-
         with patch(
             'auth_app.api.views.authenticate',
             side_effect=Exception,
         ):
-            response = self.client.post(
-                '/api/login/',
-                data,
-            )
+            response = self._login_user()
 
         self.assertEqual(
             response.status_code,

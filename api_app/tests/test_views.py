@@ -7,6 +7,8 @@ from reviews_app.models import Review
 
 
 class BaseInfoTestView(APITestCase):
+    """Test the base information API endpoint."""
+
     def setUp(self):
         self.customer = CustomUser.objects.create_user(
             username='testuser',

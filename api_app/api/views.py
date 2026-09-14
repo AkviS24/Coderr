@@ -1,5 +1,4 @@
 from django.db.models import Avg
-
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -8,8 +7,9 @@ from offers_app.models import Offer
 from reviews_app.models import Review
 
 
-
 class BaseInfoView(APIView):
+    """Return aggregated information for the base page."""
+
     def get(self, request):
         review_count = Review.objects.count()
         average_rating = Review.objects.aggregate(

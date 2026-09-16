@@ -1,7 +1,7 @@
-from django.contrib import admin
 from django.conf import settings
-from django.urls import include, path
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 
 from offers_app.api.views import OfferDetailsView
 from orders_app.api.views import OrderCountView, CompletedOrderCountView
@@ -46,7 +46,7 @@ urlpatterns = [
     path(
         'api/base-info/',
         include('api_app.api.urls'),
-    )
+    ),
 ]
 
 urlpatterns += static(

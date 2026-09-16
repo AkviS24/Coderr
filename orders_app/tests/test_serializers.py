@@ -6,13 +6,13 @@ from orders_app.api.serializers import OrderSerializer
 
 
 class OrderSerializerTest(TestCase):
-    """Tests the order serializer."""
+    """Test the order serializer."""
 
     def setUp(self):
         self.customer = CustomUser.objects.create_user(
             username='customer',
             password='testpassword123!',
-            type='customer'
+            type='customer',
         )
         self.business = CustomUser.objects.create_user(
             username='business',

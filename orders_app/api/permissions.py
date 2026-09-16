@@ -11,17 +11,15 @@ class IsOrderBusinessUser(BasePermission):
         return obj.business_user == request.user
 
 
-
 class IsCustomerUser(BasePermission):
-    """Validates that the user is a customer"""
+    """Validates that the user is a customer."""
 
     def has_permission(self, request, view):
         return request.user.type == 'customer'
 
 
-
 class IsStaffUser(BasePermission):
-    """Validates that the user ist staff user."""
+    """Validates that the user is a staff member."""
 
     def has_permission(self, request, view):
         return request.user.is_staff

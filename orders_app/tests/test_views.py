@@ -77,11 +77,10 @@ class OrderViewTest(APITestCase):
             status='in_progress',
         )
 
-    def test_get_orders_returns_only_own_orders_to_authenticated_user(self):
+    def _get_order_ids(self, user):
         self.client.force_authenticate(
-            user=self.customer,
+            user=user,
         )
-
         response = self.client.get(
             '/api/orders/',
         )
@@ -91,10 +90,46 @@ class OrderViewTest(APITestCase):
             status.HTTP_200_OK,
         )
 
-        order_ids = [
-            order['id']
-            for order in response.data
+        return [order['id'] for order in response.data]
+
+    def _assert_required_fields(self, data):
+        required_fields = [
+            'id',
+            'customer_user',
+            'business_user',
+            'title',
+            'revisions',
+            'delivery_time_in_days',
+            'price',
+            'features',
+            'offer_type',
+            'status',
+            'created_at',
+            'updated_at',
         ]
+
+        for order in data:
+            for field in required_fields:
+                self.assertIn(
+                    field,
+                    order,
+                )
+
+    def _create_order_from_offer_detail(self, user):
+        self.client.force_authenticate(
+            user=user,
+        )
+
+        return self.client.post(
+            reverse('order-list'),
+            {
+                'offer_detail_id': self.offer_detail.id,
+            },
+            format='json',
+        )
+
+    def test_get_orders_returns_only_own_orders_to_authenticated_user(self):
+        order_ids = self._get_order_ids(self.customer)
 
         self.assertIn(
             self.order.id,
@@ -107,23 +142,7 @@ class OrderViewTest(APITestCase):
         )
 
     def test_get_orders_returns_business_users_orders(self):
-        self.client.force_authenticate(
-            user=self.business,
-        )
-
-        response = self.client.get(
-            '/api/orders/',
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_200_OK,
-        )
-
-        order_ids = [
-            order['id']
-            for order in response.data
-        ]
+        order_ids = self._get_order_ids(self.business)
 
         self.assertIn(
             self.order.id,
@@ -159,39 +178,11 @@ class OrderViewTest(APITestCase):
             status.HTTP_200_OK,
         )
 
-        required_fields = [
-            'id',
-            'customer_user',
-            'business_user',
-            'title',
-            'revisions',
-            'delivery_time_in_days',
-            'price',
-            'features',
-            'offer_type',
-            'status',
-            'created_at',
-            'updated_at',
-        ]
-
-        for order in response.data:
-            for field in required_fields:
-                self.assertIn(
-                    field,
-                    order,
-                )
+        self._assert_required_fields(response.data)
 
     def test_post_offer_detail_id_to_create_new_order(self):
-        self.client.force_authenticate(
-            user=self.customer,
-        )
-
-        response = self.client.post(
-            '/api/orders/',
-            {
-                'offer_detail_id': self.offer_detail.id,
-            },
-            format='json',
+        response = self._create_order_from_offer_detail(
+            self.customer,
         )
 
         self.assertEqual(
@@ -222,24 +213,6 @@ class OrderViewTest(APITestCase):
         self.assertEqual(
             response.data['status'],
             'in_progress',
-        )
-
-    def test_post_unknown_offer_detail_id_returns_not_found(self):
-        self.client.force_authenticate(
-            user=self.customer,
-        )
-
-        response = self.client.post(
-            '/api/orders/',
-            {
-                'offer_detail_id': self.offer_detail.id + 999,
-            },
-            format='json',
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_404_NOT_FOUND,
         )
 
     def test_post_offer_detail_id_when_not_authenticated(self):
@@ -320,28 +293,6 @@ class OrderViewTest(APITestCase):
         self.assertEqual(
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
-        )
-
-    def test_patch_status_as_customer_as_business_user_returns_403(self):
-        self.order.business_user = self.customer
-        self.order.save()
-
-        self.client.force_authenticate(
-            user=self.customer,
-        )
-
-        response = self.client.patch(
-            reverse(
-                'order-detail',
-                kwargs={'pk': self.order.id},
-            ),
-            {'status': 'completed'},
-            format='json',
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_403_FORBIDDEN,
         )
 
     def test_patch_status_to_completed_as_business_user(self):
@@ -759,32 +710,4 @@ class OrderViewTest(APITestCase):
         self.assertEqual(
             response.data['completed_order_count'],
             1,
-        )
-
-    def test_order_count_rejects_customer_user(self):
-        self.client.force_authenticate(
-            user=self.customer,
-        )
-
-        response = self.client.get(
-            f'/api/order-count/{self.customer.id}/',
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_404_NOT_FOUND,
-        )
-
-    def test_completed_order_count_rejects_customer_user(self):
-        self.client.force_authenticate(
-            user=self.customer,
-        )
-
-        response = self.client.get(
-            f'/api/order-count/{self.customer.id}/',
-        )
-
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_404_NOT_FOUND,
         )

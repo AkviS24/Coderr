@@ -1,5 +1,3 @@
-from django.urls import reverse
-
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -8,32 +6,43 @@ from ..models import Review
 
 
 class ReviewListViewTest(APITestCase):
+    """Test review list, creation, update, and deletion endpoints."""
 
     def setUp(self):
+        self._create_customer_users()
+        self._create_business_users()
+        self._create_reviews()
+        self.client.force_authenticate(
+            user=self.user,
+        )
+
+    def _create_customer_users(self):
         self.user = CustomUser.objects.create_user(
             username='testuser',
             password='testpassword123!',
             type='customer',
         )
 
-        self.business_user = CustomUser.objects.create_user(
-            username='businessuser',
-            password='businesspassword123!',
-            type='business',
-        )
-
         self.second_user = CustomUser.objects.create_user(
             username='seconduser',
-            password='secondpassword123!',
+            password='seconduserpassword123!',
             type='customer',
         )
 
-        self.second_business_user = CustomUser.objects.create_user(
-            username='secondbusiness',
-            password='secondbusiness123!',
+    def _create_business_users(self):
+        self.business_user = CustomUser.objects.create_user(
+            username='businessuser',
+            password='businessuserpassword123!',
             type='business',
         )
 
+        self.second_business_user = CustomUser.objects.create_user(
+            username='secondbusinessuser',
+            password='secondbusinesspassword123!',
+            type='business',
+        )
+
+    def _create_reviews(self):
         self.review = Review.objects.create(
             reviewer=self.user,
             business_user=self.business_user,
@@ -55,8 +64,36 @@ class ReviewListViewTest(APITestCase):
             description='Third review',
         )
 
-        self.client.force_authenticate(
-            user=self.user,
+    def _create_new_business_user(self):
+        return CustomUser.objects.create_user(
+            username='newbusiness',
+            password='newbusinesspassword123!',
+            type='business',
+        )
+
+    def _create_review_for_business(self, business_user):
+        return self.client.post(
+            '/api/reviews/',
+            {
+                'business_user': business_user.id,
+                'rating': 4,
+                'description': 'It was amazing',
+            },
+        )
+
+    def _update_review(self):
+        return self.client.patch(
+            f'/api/reviews/{self.review.id}/',
+            {
+                'rating': 6,
+                'description': 'Updated review',
+            },
+            format='json',
+        )
+
+    def _delete_review(self):
+        return self.client.delete(
+            f'/api/reviews/{self.review.id}/',
         )
 
     def test_get_reviews_returns_reviews(self):
@@ -146,7 +183,6 @@ class ReviewListViewTest(APITestCase):
             response.status_code,
             status.HTTP_200_OK,
         )
-
         self.assertEqual(
             response.data[-1]['id'],
             self.second_review.id,
@@ -167,19 +203,10 @@ class ReviewListViewTest(APITestCase):
         )
 
     def test_post_review_creates_review(self):
-        new_business_user = CustomUser.objects.create_user(
-            username='newbusiness',
-            password='newbusinesspassword123!',
-            type='business',
-        )
+        new_business_user = self._create_new_business_user()
 
-        response = self.client.post(
-            '/api/reviews/',
-            {
-                'business_user': new_business_user.id,
-                'rating': 4,
-                'description': 'It was amazing',
-            },
+        response = self._create_review_for_business(
+            new_business_user,
         )
 
         self.assertEqual(
@@ -197,13 +224,13 @@ class ReviewListViewTest(APITestCase):
             self.user.id,
         )
 
-    def test_post_review_refects_duplicate_review(self):
+    def test_post_review_rejects_duplicate_review(self):
         response = self.client.post(
             '/api/reviews/',
             {
                 'business_user': self.business_user.id,
                 'rating': 5,
-                'description': 'Second review for testing.'
+                'description': 'Second review for testing.',
             },
         )
 
@@ -251,14 +278,7 @@ class ReviewListViewTest(APITestCase):
         )
 
     def test_patch_review_updates_rating_and_description(self):
-        response = self.client.patch(
-            f'/api/reviews/{self.review.id}/',
-            {
-                'rating': 6,
-                'description': 'Updated review',
-            },
-            format='json',
-        )
+        response = self._update_review()
 
         self.assertEqual(
             response.status_code,
@@ -328,9 +348,7 @@ class ReviewListViewTest(APITestCase):
         )
 
     def test_delete_review_deletes_review(self):
-        response = self.client.delete(
-            f'/api/reviews/{self.review.id}/',
-        )
+        response = self._delete_review()
 
         self.assertEqual(
             response.status_code,

@@ -4,6 +4,8 @@ from ..models import Review
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Serialize review data for API requests and responses."""
+
     reviewer = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -18,17 +20,17 @@ class ReviewSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-    def validate(self, attrs):
-        if self.instance:
-            allowed_fields = {'rating', 'description'}
+    def _validate_update(self, attrs):
+        allowed_fields = {'rating', 'description'}
 
-            if set(attrs) - allowed_fields:
-                raise serializers.ValidationError(
-                    'Only rating and description can be updated.',
-                )
+        if set(attrs) - allowed_fields:
+            raise serializers.ValidationError(
+                'Only rating and description can be updated.',
+            )
 
-            return attrs
-        
+        return attrs
+
+    def _validate_create(self, attrs):
         reviewer = self.context['request'].user
         business_user = attrs['business_user']
 
@@ -37,10 +39,16 @@ class ReviewSerializer(serializers.ModelSerializer):
             business_user=business_user,
         ).exists():
             raise serializers.ValidationError(
-                'You have already reviewed this business.'
+                'You have already reviewed this business.',
             )
 
         return attrs
+
+    def validate(self, attrs):
+        if self.instance:
+            return self._validate_update(attrs)
+
+        return self._validate_create(attrs)
 
     def create(self, validated_data):
         reviewer = self.context['request'].user

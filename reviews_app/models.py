@@ -2,8 +2,10 @@ from django.db import models
 
 from auth_app.models import CustomUser
 
-# Create your models here.
+
 class Review(models.Model):
+    """Represent a review written for a business user."""
+
     reviewer = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -21,7 +23,6 @@ class Review(models.Model):
 
     def __str__(self):
         return f'{self.reviewer} - {self.business_user} ({self.rating}/5)'
-
 
     class Meta:
         constraints = [

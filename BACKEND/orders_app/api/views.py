@@ -88,6 +88,7 @@ class OrderDetailView(APIView):
             Order,
             pk=pk,
         )
+        self.check_object_permissions(request, order)
         order.delete()
 
         return Response(

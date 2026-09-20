@@ -236,6 +236,7 @@ class OffersListView(APIView):
         return Offer.objects.create(
             user=request.user,
             title=request.data.get('title'),
+            image=request.data.get('image'),
             description=request.data.get('description'),
         )
 

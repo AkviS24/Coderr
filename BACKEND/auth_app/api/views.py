@@ -7,18 +7,23 @@ from rest_framework.views import APIView
 
 from ..models import CustomUser
 from .serializers import LoginSerializer, RegistrationSerializer
+from profile_app.models import UserProfile
 
 
 class RegistrationView(APIView):
     """Handle user registration requests."""
 
     def _create_user(self, serializer):
-        return CustomUser.objects.create_user(
+        user = CustomUser.objects.create_user(
             username=serializer.validated_data['username'],
             email=serializer.validated_data['email'],
             password=serializer.validated_data['password'],
             type=serializer.validated_data['type'],
         )
+        UserProfile.objects.create(
+            user=user,
+        )
+        return user
 
     def _create_registration_response(self, user):
         token = Token.objects.create(

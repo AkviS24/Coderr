@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from auth_app.models import CustomUser
+from profile_app.models import UserProfile
 
 
 class RegistrationViewTest(TestCase):
@@ -69,6 +70,9 @@ class RegistrationViewTest(TestCase):
         )
         self.assertTrue(
             CustomUser.objects.filter(username='newuser').exists()
+        )
+        self.assertTrue(
+            UserProfile.objects.filter(user__username='newuser').exists()
         )
 
     def test_registration_returns_complete_response(self):

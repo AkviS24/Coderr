@@ -30,6 +30,45 @@ class BusinessProfilesTest(APITestCase):
             user=self.customer,
         )
 
+    def test_registered_business_user_appears_in_profiles(self):
+        registration_data = {
+            'username': 'registeredbusiness',
+            'email': 'registeredbusiness@tester.de',
+            'password': 'businesspassword123!',
+            'repeated_password': 'businesspassword123!',
+            'type': 'business',
+        }
+
+        registration_response = self.client.post(
+            '/api/registration/',
+            registration_data,
+        )
+
+        self.assertEqual(
+            registration_response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        user = CustomUser.objects.get(username='registeredbusiness')
+        self.client.force_authenticate(user=user)
+
+        response = self.client.get(
+            '/api/profiles/business/',
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            len(response.data),
+            2,
+        )
+        self.assertEqual(
+            response.data[1]['username'],
+            'registeredbusiness',
+        )
+
     def test_get_business_profiles(self):
         token = Token.objects.create(
             user=self.user,

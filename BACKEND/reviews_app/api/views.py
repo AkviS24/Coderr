@@ -43,7 +43,7 @@ class ReviewListView(APIView):
 
         ordering = request.query_params.get('ordering')
 
-        if ordering in ['rating', 'updated_at']:
+        if ordering in ['rating', '-rating', 'updated_at', '-updated_at']:
             return reviews.order_by(ordering)
 
         return reviews

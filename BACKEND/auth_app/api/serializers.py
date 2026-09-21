@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from ..models import CustomUser
+
 
 class RegistrationSerializer(serializers.Serializer):
     """Validate user registration data."""
@@ -14,6 +16,26 @@ class RegistrationSerializer(serializers.Serializer):
             ('business', 'Business'),
         ),
     )
+
+    def validate_username(self, value):
+        """Reject usernames that are already registered."""
+
+        if CustomUser.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                'A user with this username already exists.',
+            )
+
+        return value
+
+    def validate_email(self, value):
+        """Reject email addresses that are already registered."""
+
+        if CustomUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                'A user with this email already exists.',
+            )
+
+        return value
 
     def validate(self, attrs):
         """Validate that both password fields match."""

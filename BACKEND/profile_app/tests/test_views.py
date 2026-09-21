@@ -23,14 +23,13 @@ class UserProfileViewTest(TestCase):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.get(
-            f'/api/profile/{self.profile.id}/'
+            f'/api/profile/{self.user.id}/'
         )
 
         self.assertEqual(
             response.status_code,
             status.HTTP_200_OK,
         )
-
 
     def test_get_profile_not_found(self):
         self.client.force_authenticate(user=self.user)
@@ -44,11 +43,9 @@ class UserProfileViewTest(TestCase):
             status.HTTP_404_NOT_FOUND,
         )
 
-
     def test_get_profile_not_authenticated(self):
-
         response = self.client.get(
-            f'/api/profile/{self.profile.id}/',
+            f'/api/profile/{self.user.id}/',
         )
 
         self.assertEqual(
@@ -56,14 +53,13 @@ class UserProfileViewTest(TestCase):
             status.HTTP_401_UNAUTHORIZED,
         )
 
-
     def test_patch_own_profile(self):
         self.client.force_authenticate(
             user=self.user,
         )
 
         response = self.client.patch(
-            f'/api/profile/{self.profile.id}/',
+            f'/api/profile/{self.user.id}/',
             {
                 'first_name': 'Updated First Name',
                 'location': 'Hachenburg, Westerwald',
@@ -81,7 +77,7 @@ class UserProfileViewTest(TestCase):
             username='otheruser',
             password='otherpassword123!',
         )
-        other_profile = UserProfile.objects.create(
+        UserProfile.objects.create(
             user=other_user,
         )
 
@@ -90,7 +86,7 @@ class UserProfileViewTest(TestCase):
         )
 
         response = self.client.patch(
-            f'/api/profile/{other_profile.id}/',
+            f'/api/profile/{other_user.id}/',
             {
                 'location': 'Hachenburg, Westerwald',
             },
@@ -104,7 +100,7 @@ class UserProfileViewTest(TestCase):
 
     def test_patch_profile_not_authenticated(self):
         response = self.client.patch(
-            f'/api/profile/{self.profile.id}/',
+            f'/api/profile/{self.user.id}/',
             {
                 'location': 'Hachenburg, Westerwald',
             },
@@ -118,11 +114,11 @@ class UserProfileViewTest(TestCase):
 
     def test_patch_profile_not_found(self):
         self.client.force_authenticate(
-                    user=self.user,
-                )
-        
+            user=self.user,
+        )
+
         response = self.client.patch(
-            f'/api/profile/9999/',
+            '/api/profile/9999/',
             {
                 'location': 'Hachenburg,Westerwald',
             },

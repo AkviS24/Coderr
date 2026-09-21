@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework import serializers
 
 from ..models import Review
@@ -7,6 +8,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     """Serialize review data for API requests and responses."""
 
     reviewer = serializers.PrimaryKeyRelatedField(read_only=True)
+    rating = serializers.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+    )
 
     class Meta:
         model = Review
@@ -33,10 +37,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         return attrs
 
     def _validate_create(self, attrs):
-        """Validate creation of a new business review."""
+        """Validate review creation for a business user."""
 
         reviewer = self.context['request'].user
         business_user = attrs['business_user']
+
+        if business_user.type != 'business':
+            raise serializers.ValidationError(
+                {'business_user': 'User must be a business user.'},
+            )
 
         if Review.objects.filter(
             reviewer=reviewer,

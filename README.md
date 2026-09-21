@@ -6,6 +6,81 @@ The project consists of a Django REST Framework backend and a separate frontend 
 
 The backend in this repository was developed by me as part of the Developer Akademie portfolio project.
 
+## Backend Setup
+
+### 1. Clone the repository
+
+    git clone https://github.com/AkviS24/Coderr.git
+    cd coderr/BACKEND
+
+### 2. Create a virtual environment
+
+#### Windows
+
+    python -m venv .venv
+    .venv\Scripts\activate
+
+#### Linux / macOS
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+### 3. Install dependencies
+
+    pip install -r requirements.txt
+
+### 4. Configure environment variables
+
+Create the `.env` file inside the `BACKEND` directory by copying the provided example file.
+
+#### Windows
+
+    copy .env.example .env
+
+#### Linux / macOS
+
+    cp .env.example .env
+
+Open the `.env` file and replace the placeholder with your own Django secret key:
+
+    SECRET_KEY=your-secret-key
+
+The `SECRET_KEY` is loaded from the environment and is not stored directly in the source code.
+
+The `.env` file must never be committed to the repository.
+
+### 5. Apply database migrations
+
+    python manage.py migrate
+
+### 6. Create a superuser
+
+To access the Django admin panel, create a superuser:
+
+    python manage.py createsuperuser
+
+Follow the prompts to enter a username, email address, and password.
+
+The superuser can be used to log in to the Django admin panel and manage the backend data.
+
+### 7. Start the development server
+
+    python manage.py runserver
+
+The backend is then available at:
+
+    http://127.0.0.1:8000/
+
+The API is available below:
+
+    http://127.0.0.1:8000/api/
+
+The Django admin panel is available at:
+
+    http://127.0.0.1:8000/admin/
+
+Log in to the admin panel using the credentials of the superuser you created.
+
 ## Technologies
 
 ### Backend
@@ -44,57 +119,6 @@ The frontend should be copied into the `FRONTEND` directory of this repository.
     ├── FRONTEND/
     │   └── ...
     └── README.md
-
-## Backend Setup
-
-### 1. Clone the repository
-
-    git clone https://github.com/AkviS24/Coderr.git
-    cd coderr/BACKEND
-
-### 2. Create a virtual environment
-
-#### Windows
-
-    python -m venv .venv
-    .venv\Scripts\activate
-
-#### Linux / macOS
-
-    python3 -m venv .venv
-    source .venv/bin/activate
-
-### 3. Install dependencies
-
-    pip install -r requirements.txt
-
-### 4. Configure environment variables
-
-Create a `.env` file inside the `BACKEND` directory.
-
-The file must contain the Django secret key:
-
-    SECRET_KEY=your-secret-key
-
-The `SECRET_KEY` is loaded from the environment and is not stored directly in the source code.
-
-The `.env` file must never be committed to the repository.
-
-### 5. Apply database migrations
-
-    python manage.py migrate
-
-### 6. Start the development server
-
-    python manage.py runserver
-
-The backend is then available at:
-
-    http://127.0.0.1:8000/
-
-The API is available below:
-
-    http://127.0.0.1:8000/api/
 
 ## Frontend Setup
 

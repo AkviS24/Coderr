@@ -58,7 +58,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'user',
             'username',
-            'file',
             'type',
             'created_at',
         ]

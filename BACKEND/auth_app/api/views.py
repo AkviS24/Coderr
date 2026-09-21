@@ -5,9 +5,10 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from profile_app.models import UserProfile
+
 from ..models import CustomUser
 from .serializers import LoginSerializer, RegistrationSerializer
-from profile_app.models import UserProfile
 
 
 class RegistrationView(APIView):

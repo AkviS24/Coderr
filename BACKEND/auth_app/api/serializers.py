@@ -16,6 +16,8 @@ class RegistrationSerializer(serializers.Serializer):
     )
 
     def validate(self, attrs):
+        """Validate that both password fields match."""
+
         if attrs['password'] != attrs['repeated_password']:
             raise serializers.ValidationError(
                 {

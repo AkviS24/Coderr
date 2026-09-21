@@ -13,18 +13,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
 
     def _update_user(self, instance, user_data):
+        """Update the user fields from the validated data."""
+
         for field, value in user_data.items():
             setattr(instance.user, field, value)
 
         instance.user.save()
 
     def _update_profile(self, instance, validated_data):
+        """Update the profile fields from the validated data."""
+
         for field, value in validated_data.items():
             setattr(instance, field, value)
 
         instance.save()
 
     def update(self, instance, validated_data):
+        """Update the user and profile data."""
+        
         user_data = validated_data.pop('user', {})
 
         self._update_user(instance, user_data)

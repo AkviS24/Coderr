@@ -4,6 +4,8 @@ from auth_app.models import CustomUser
 
 
 class Offer(models.Model):
+    """Represent a service offer created by a business user."""
+
     user = models.ForeignKey(
         CustomUser,
         on_delete=models.CASCADE,
@@ -20,10 +22,14 @@ class Offer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """Return the offer title."""
+
         return self.title
 
 
 class OfferDetail(models.Model):
+    """Represent a pricing and delivery option for an offer."""
+
     offer = models.ForeignKey(
         Offer,
         on_delete=models.CASCADE,
@@ -49,4 +55,6 @@ class OfferDetail(models.Model):
     )
 
     def __str__(self):
+        """Return the offer detail title."""
+
         return self.title

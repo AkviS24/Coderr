@@ -14,6 +14,8 @@ class RegistrationView(APIView):
     """Handle user registration requests."""
 
     def _create_user(self, serializer):
+        """Create a user and its profile from validated data."""
+
         user = CustomUser.objects.create_user(
             username=serializer.validated_data['username'],
             email=serializer.validated_data['email'],
@@ -26,6 +28,8 @@ class RegistrationView(APIView):
         return user
 
     def _create_registration_response(self, user):
+        """Create the registration response with an authentication token."""
+
         token = Token.objects.create(
             user=user,
         )
@@ -41,6 +45,8 @@ class RegistrationView(APIView):
         )
 
     def post(self, request):
+        """Register a new user account."""
+
         serializer = RegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -53,12 +59,16 @@ class LoginView(APIView):
     """Handle user login requests."""
 
     def _authenticate_user(self, serializer):
+        """Authenticate the user from the validated credentials."""
+
         return authenticate(
             username=serializer.validated_data['username'],
             password=serializer.validated_data['password'],
         )
 
     def _create_login_response(self, user):
+        """Create the login response with an authentication token."""
+
         token, _ = Token.objects.get_or_create(
             user=user,
         )
@@ -74,6 +84,8 @@ class LoginView(APIView):
         )
 
     def post(self, request):
+        """Authenticate a user and return an authentication token."""
+
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

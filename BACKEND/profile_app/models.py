@@ -26,4 +26,6 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """Return the username associated with the profile."""
+
         return self.user.username

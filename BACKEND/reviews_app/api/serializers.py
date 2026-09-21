@@ -21,6 +21,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         ]
 
     def _validate_update(self, attrs):
+        """Validate fields allowed for review updates."""
+
         allowed_fields = {'rating', 'description'}
 
         if set(attrs) - allowed_fields:
@@ -31,6 +33,8 @@ class ReviewSerializer(serializers.ModelSerializer):
         return attrs
 
     def _validate_create(self, attrs):
+        """Validate creation of a new business review."""
+
         reviewer = self.context['request'].user
         business_user = attrs['business_user']
 
@@ -45,12 +49,16 @@ class ReviewSerializer(serializers.ModelSerializer):
         return attrs
 
     def validate(self, attrs):
+        """Validate review data for creation or update."""
+
         if self.instance:
             return self._validate_update(attrs)
 
         return self._validate_create(attrs)
 
     def create(self, validated_data):
+        """Create a review for the authenticated customer."""
+
         reviewer = self.context['request'].user
         return Review.objects.create(
             reviewer=reviewer,

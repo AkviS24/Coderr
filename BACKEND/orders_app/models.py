@@ -46,6 +46,8 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """Return a readable order description."""
+
         return f'Order {self.id} - {self.title}'
 
     class Meta:

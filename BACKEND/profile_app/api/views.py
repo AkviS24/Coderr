@@ -13,18 +13,18 @@ class UserProfileView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def get_profile(self, pk):
-        """Return the profile for the given primary key."""
+    def get_profile(self, user_id):
+        """Return the profile for the given user ID."""
 
         return get_object_or_404(
             UserProfile,
-            pk=pk,
+            user_id=user_id,
         )
 
-    def get(self, request, pk):
+    def get(self, request, user_id):
         """Return the requested user profile."""
 
-        profile = self.get_profile(pk)
+        profile = self.get_profile(user_id)
         serializer = UserProfileSerializer(profile)
 
         return Response(
@@ -32,10 +32,10 @@ class UserProfileView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    def patch(self, request, pk):
+    def patch(self, request, user_id):
         """Update the authenticated user's own profile."""
 
-        profile = self.get_profile(pk)
+        profile = self.get_profile(user_id)
 
         if profile.user != request.user:
             return Response(

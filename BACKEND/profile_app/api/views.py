@@ -72,6 +72,8 @@ class ProfileListView(APIView):
         )
 
     def server_error_response(self):
+        """Return a generic internal server error response."""
+
         return Response(
             {
                 'detail': (
@@ -82,6 +84,8 @@ class ProfileListView(APIView):
         )
 
     def get(self, request):
+        """Return profiles matching the configured user type."""
+
         try:
             profiles = self.get_profiles()
         except Exception:

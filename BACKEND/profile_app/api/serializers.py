@@ -30,7 +30,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update the user and profile data."""
-        
+
         user_data = validated_data.pop('user', {})
 
         self._update_user(instance, user_data)

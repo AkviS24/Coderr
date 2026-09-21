@@ -22,7 +22,7 @@ class Review(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        """Return a readable order description."""
+        """Return a readable review description."""
 
         return f'{self.reviewer} - {self.business_user} ({self.rating}/5)'
 

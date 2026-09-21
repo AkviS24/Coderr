@@ -23,11 +23,15 @@ class OrderListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """Return permissions based on the request method."""
+
         if self.request.method == 'POST':
             return [IsAuthenticated(), IsCustomerUser()]
         return [IsAuthenticated()]
 
     def get(self, request):
+        """Return orders belonging to the authenticated user."""
+
         orders = Order.objects.filter(
             Q(customer_user=request.user)
             | Q(business_user=request.user)
@@ -40,6 +44,8 @@ class OrderListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        """Create an order from an offer detail."""
+
         serializer = OrderSerializer(
             data=request.data,
             context={'request': request},
@@ -59,6 +65,8 @@ class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """Return permissions based on the request method."""
+
         if self.request.method == 'PATCH':
             return [IsAuthenticated(), IsOrderBusinessUser()]
         if self.request.method == 'DELETE':
@@ -66,6 +74,8 @@ class OrderDetailView(APIView):
         return [IsAuthenticated()]
 
     def patch(self, request, pk):
+        """Update the status of an order."""
+
         order = get_object_or_404(
             Order,
             pk=pk,
@@ -84,6 +94,8 @@ class OrderDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        """Delete an order as an authorized staff user."""
+
         order = get_object_or_404(
             Order,
             pk=pk,
@@ -102,6 +114,8 @@ class OrderCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
+        """Return the number of in-progress orders."""
+
         get_object_or_404(
             CustomUser,
             pk=business_user_id,
@@ -126,6 +140,8 @@ class CompletedOrderCountView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, business_user_id):
+        """Return the number of completed orders."""
+        
         get_object_or_404(
             CustomUser,
             pk=business_user_id,

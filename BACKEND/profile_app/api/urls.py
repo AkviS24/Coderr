@@ -1,11 +1,15 @@
 from django.urls import path
 
-from .views import UserProfileView, BusinessProfilesView, CustomerProfilesView
+from .views import (
+    BusinessProfilesView,
+    CustomerProfilesView,
+    UserProfileView,
+)
 
 
 urlpatterns = [
     path(
-        'profile/<int:pk>/',
+        'profile/<int:user_id>/',
         UserProfileView.as_view(),
     ),
     path(
@@ -15,5 +19,5 @@ urlpatterns = [
     path(
         'profiles/customer/',
         CustomerProfilesView.as_view(),
-    )
+    ),
 ]

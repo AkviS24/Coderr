@@ -89,7 +89,7 @@ class OrderDetailView(APIView):
         serializer.save()
 
         return Response(
-            serializer.data,
+            OrderSerializer(order).data,
             status=status.HTTP_200_OK,
         )
 

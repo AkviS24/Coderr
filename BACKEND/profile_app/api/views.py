@@ -103,8 +103,12 @@ class ProfileListView(APIView):
 
 
 class BusinessProfilesView(ProfileListView):
+    """Return profiles of business users."""
+
     profile_type = 'business'
 
 
 class CustomerProfilesView(ProfileListView):
+    """Return profiles of customer users."""
+
     profile_type = 'customer'

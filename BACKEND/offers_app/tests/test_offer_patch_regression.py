@@ -82,3 +82,23 @@ class OfferPatchRegressionTest(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+    def test_patch_detail_without_offer_type_returns_400(self):
+        """Return 400 when a detail update omits offer_type."""
+        response = self.client.patch(
+            f'/api/offers/{self.offer.id}/',
+            {
+                'details': [
+                    {
+                        'title': 'Test',
+                        'revisions': 3,
+                        'delivery_time_in_days': 6,
+                        'price': 120,
+                        'features': ['Test'],
+                    },
+                ],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 400)

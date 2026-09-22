@@ -55,6 +55,10 @@ class OfferUpdateSerializer(serializers.ModelSerializer):
     def _update_detail(self, instance, detail_data):
         """Update an offer detail belonging to an offer."""
         detail_id = detail_data.pop('id', None)
+        if detail_id is None and 'offer_type' not in detail_data:
+            raise serializers.ValidationError(
+                {'details': 'Offer type is required.'},
+            )
         lookup = (
             {'id': detail_id}
             if detail_id is not None

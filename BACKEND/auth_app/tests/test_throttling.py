@@ -11,6 +11,10 @@ class AuthenticationThrottleTest(TestCase):
     def setUp(self):
         cache.clear()
 
+    def tearDown(self):
+        cache.clear()
+        super().tearDown()
+
     def test_login_throttles_after_ten_requests_per_minute(self):
         """Reject the eleventh login request within one minute."""
 

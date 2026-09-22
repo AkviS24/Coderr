@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from profile_app.models import UserProfile
@@ -13,6 +14,9 @@ from .serializers import LoginSerializer, RegistrationSerializer
 
 class RegistrationView(APIView):
     """Handle user registration requests."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'registration'
 
     def _create_user(self, serializer):
         """Create a user and its profile from validated data."""
@@ -58,6 +62,9 @@ class RegistrationView(APIView):
 
 class LoginView(APIView):
     """Handle user login requests."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
 
     def _authenticate_user(self, serializer):
         """Authenticate the user from the validated credentials."""

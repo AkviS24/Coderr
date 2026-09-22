@@ -11,6 +11,8 @@ class BaseInfoView(APIView):
     """Return aggregated information for the base page."""
 
     def get(self, request):
+        """Return platform-wide review, profile, and offer statistics."""
+
         review_count = Review.objects.count()
         average_rating = Review.objects.aggregate(
             average=Avg('rating'),

@@ -1,4 +1,6 @@
 from unittest.mock import patch
+
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
@@ -9,6 +11,7 @@ from profile_app.models import UserProfile
 
 class CustomerProfilesTest(APITestCase):
     def setUp(self):
+        cache.clear()
         self.user = CustomUser.objects.create_user(
             username='customeruser',
             password='customerpassword123!',
@@ -27,6 +30,10 @@ class CustomerProfilesTest(APITestCase):
         self.business_profile = UserProfile.objects.create(
             user=self.business,
         )
+
+    def tearDown(self):
+        cache.clear()
+        super().tearDown()
 
     def test_registered_customer_user_appears_in_profiles(self):
         registration_data = {
